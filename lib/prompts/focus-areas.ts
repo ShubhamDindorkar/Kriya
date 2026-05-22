@@ -1,0 +1,136 @@
+export const FOCUS_AREAS = {
+  companyProfile: {
+    id: "A",
+    name: "Company Profile & Footprint",
+    topics: [
+      "legal entity structure brands subsidiaries",
+      "CEO CFO leadership team executives",
+      "products services portfolio offerings",
+      "headquarters locations offices global footprint",
+      "company history founding background",
+      "parent company ownership structure",
+      "DBA trade names brand portfolio",
+      "organizational structure business units",
+      "key executives biography business context",
+      "company website about page official",
+      "LinkedIn company page size industry",
+      "Crunchbase profile company overview",
+      "business registration incorporation state",
+    ],
+  },
+  financial: {
+    id: "B",
+    name: "Financial & Corporate Health",
+    topics: [
+      "revenue earnings financial results",
+      "SEC 10-K 10-Q annual report filing",
+      "funding rounds venture capital investment",
+      "valuation market cap enterprise value",
+      "acquisition merger M&A transaction",
+      "credit rating S&P Moody's Fitch",
+      "profitability margins EBITDA",
+      "debt liabilities financial obligations",
+      "IPO public offering stock performance",
+      "analyst estimates financial forecast",
+      "cash flow liquidity runway",
+      "auditor financial statements restatement",
+      "private company funding Crunchbase PitchBook",
+    ],
+  },
+  reputation: {
+    id: "C",
+    name: "Reputation & Market Position",
+    topics: [
+      "news Reuters Bloomberg WSJ Financial Times",
+      "Gartner Forrester IDC analyst report",
+      "market share competitive positioning industry",
+      "customer reviews G2 Capterra TrustRadius",
+      "employee reviews Glassdoor Indeed aggregate",
+      "brand reputation awards recognition",
+      "customer case studies testimonials",
+      "industry ranking leaderboard position",
+      "media coverage press mentions",
+      "thought leadership market perception",
+      "competitor comparison market analysis",
+      "Net Promoter customer satisfaction survey",
+      "social media presence brand sentiment business",
+    ],
+  },
+  legal: {
+    id: "D",
+    name: "Legal & Regulatory",
+    topics: [
+      "lawsuit litigation court filing settlement",
+      "regulatory action SEC FTC DOJ enforcement",
+      "compliance violation fine penalty sanction",
+      "patent intellectual property USPTO",
+      "trademark copyright IP dispute",
+      "class action shareholder lawsuit",
+      "government investigation subpoena",
+      "antitrust competition regulatory review",
+      "data privacy GDPR CCPA regulatory compliance",
+      "material contract public disclosure partnership",
+      "bankruptcy insolvency filing",
+      "whistleblower SEC complaint",
+      "environmental regulatory violation OSHA",
+    ],
+  },
+  supplyChain: {
+    id: "E",
+    name: "Supply Chain & Partnerships",
+    topics: [
+      "strategic partnership alliance announcement",
+      "technology integration partner ecosystem",
+      "vendor supplier relationship dependency",
+      "AWS Azure Google Cloud partnership",
+      "key customer enterprise client public",
+      "distribution channel reseller partner",
+      "OEM integration platform partner",
+      "supply chain dependency single source",
+      "joint venture collaboration agreement",
+      "certification compliance partner program",
+      "API integration marketplace partner",
+      "outsourcing manufacturing supplier",
+    ],
+  },
+  risk: {
+    id: "F",
+    name: "Risk Indicators",
+    topics: [
+      "layoffs workforce reduction restructuring WARN",
+      "management departure C-suite exit 8-K",
+      "data breach cybersecurity incident disclosure",
+      "business continuity disaster recovery",
+      "CEO departure leadership change turnover",
+      "financial distress going concern warning",
+      "regulatory risk compliance failure",
+      "operational incident outage service disruption",
+      "reputation crisis scandal controversy",
+      "key person dependency founder risk",
+      "geopolitical exposure sanctions risk",
+      "concentration risk customer revenue dependency",
+      "ESG controversy governance concern",
+    ],
+  },
+} as const;
+
+export type FocusAreaKey = keyof typeof FOCUS_AREAS;
+
+export const SOURCE_TIER_GUIDE = `
+## SOURCE RELIABILITY FRAMEWORK
+
+Tier 1 (Weight 1.0): Government records, regulatory filings (SEC EDGAR), court documents, official company disclosures (10-K, 10-Q, 8-K, press releases), primary source documents.
+
+Tier 2 (Weight 0.7): Major news (Reuters, WSJ, Bloomberg, FT), established analyst firms (Gartner, Forrester, S&P), verified professional profiles.
+
+Tier 3 (Weight 0.4): Industry publications, trade journals, specialized business blogs, conference presentations, whitepapers, LinkedIn company data.
+
+Tier 4 (Weight 0.1): Single-source claims, anonymous reports, unverified social media. Mark as "Unverified—requires additional validation".
+
+## EVIDENCE STANDARDS
+
+Critical Claims: 1× Tier 1 OR 2× Tier 2
+High Confidence: 2× Tier 2 OR 1× Tier 2 + 2× Tier 3
+Medium Confidence: 3× Tier 3
+Low Confidence: Mark as unverified
+`.trim();
