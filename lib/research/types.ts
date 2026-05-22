@@ -3,7 +3,8 @@ export type ResearchObjective =
   | "ma_research"
   | "competitive_intelligence"
   | "market_intelligence"
-  | "risk_assessment";
+  | "risk_assessment"
+  | "custom";
 
 export type ResearchDepth = "quick" | "standard" | "comprehensive";
 
@@ -20,6 +21,7 @@ export interface ResearchIntake {
   entityName?: string;
   domain?: string;
   objective: ResearchObjective;
+  customObjective?: string;
   depth: ResearchDepth;
   timeWindowMonths: number;
   geographicFocus?: string;
@@ -32,7 +34,18 @@ export const OBJECTIVE_LABELS: Record<ResearchObjective, string> = {
   competitive_intelligence: "Competitive Intelligence",
   market_intelligence: "Market Intelligence",
   risk_assessment: "Risk Assessment",
+  custom: "Your Own",
 };
+
+export function getObjectiveLabel(
+  objective: ResearchObjective,
+  customObjective?: string,
+): string {
+  if (objective === "custom" && customObjective?.trim()) {
+    return customObjective.trim();
+  }
+  return OBJECTIVE_LABELS[objective];
+}
 
 export const DEPTH_LABELS: Record<ResearchDepth, string> = {
   quick: "Quick",

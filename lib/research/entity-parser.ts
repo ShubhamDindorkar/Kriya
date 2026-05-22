@@ -233,6 +233,7 @@ export function buildIntakeFromQuery(
     entityName: partial.entityName ?? metadata.entityName,
     domain: partial.domain ?? metadata.domain,
     objective: partial.objective ?? metadata.objective ?? "vendor_assessment",
+    customObjective: partial.customObjective,
     depth: partial.depth ?? metadata.depth ?? "comprehensive",
     timeWindowMonths: partial.timeWindowMonths ?? 12,
     geographicFocus: partial.geographicFocus,

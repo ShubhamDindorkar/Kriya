@@ -9,6 +9,7 @@ export interface QueryBuilderInput {
   entityName: string;
   domain?: string;
   objective: ResearchObjective;
+  customObjective?: string;
   depth: ResearchDepth;
   timeWindowMonths?: number;
   geographicFocus?: string;
@@ -51,6 +52,12 @@ const OBJECTIVE_QUERY_EXTRAS: Record<ResearchObjective, string[]> = {
     "operational risk regulatory exposure",
     "counterparty credit risk assessment",
     "third party risk vendor dependency",
+  ],
+  custom: [
+    "business overview strategy operations",
+    "financial performance key metrics trends",
+    "regulatory legal compliance exposure",
+    "market position competitive landscape",
   ],
 };
 
@@ -115,6 +122,7 @@ export function buildQueries(input: QueryBuilderInput): GeneratedQuery[] {
     entityName,
     domain,
     objective,
+    customObjective,
     depth,
     timeWindowMonths = 12,
     geographicFocus,
@@ -137,6 +145,27 @@ export function buildQueries(input: QueryBuilderInput): GeneratedQuery[] {
       focusArea: "risk",
       focusAreaId: "OBJ",
     });
+  }
+
+  if (objective === "custom" && customObjective?.trim()) {
+    const customTopic = customObjective.trim();
+    queries.push(
+      {
+        query: `"${entityName}" ${customTopic} ${timeRange}`.trim(),
+        focusArea: "companyProfile",
+        focusAreaId: "CUS",
+      },
+      {
+        query: `"${entityName}" ${customTopic} analysis report`.trim(),
+        focusArea: "financial",
+        focusAreaId: "CUS",
+      },
+      {
+        query: `"${entityName}" ${customTopic} news recent developments`.trim(),
+        focusArea: "companyProfile",
+        focusAreaId: "CUS",
+      },
+    );
   }
 
   if (domain) {

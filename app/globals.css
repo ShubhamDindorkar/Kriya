@@ -104,3 +104,213 @@
     @apply font-sans;
   }
 }
+
+@keyframes mesh-orb-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(2%, -2%) scale(1.03);
+  }
+}
+
+@keyframes mesh-orb-a {
+  0%,
+  100% {
+    transform: translate(-3%, 3%) scale(1);
+  }
+  50% {
+    transform: translate(4%, -3%) scale(1.06);
+  }
+}
+
+@keyframes mesh-orb-b {
+  0%,
+  100% {
+    transform: translate(5%, -4%) scale(1.02);
+  }
+  50% {
+    transform: translate(-5%, 5%) scale(0.96);
+  }
+}
+
+@keyframes mesh-orb-c {
+  0%,
+  100% {
+    transform: translate(-4%, -3%) scale(0.97);
+  }
+  50% {
+    transform: translate(3%, 4%) scale(1.04);
+  }
+}
+
+@keyframes mesh-orb-d {
+  0%,
+  100% {
+    transform: translate(3%, 5%) scale(1);
+  }
+  50% {
+    transform: translate(-4%, -4%) scale(1.06);
+  }
+}
+
+@keyframes mesh-orb-e {
+  0%,
+  100% {
+    transform: translate(-5%, 0%) scale(1.04);
+  }
+  50% {
+    transform: translate(5%, 2%) scale(0.94);
+  }
+}
+
+@layer components {
+  .mesh-orb {
+    contain: paint;
+  }
+
+  .mesh-orb-colors {
+    mask-image: radial-gradient(
+      circle at 50% 50%,
+      #000 0%,
+      #000 42%,
+      rgb(0 0 0 / 0.55) 58%,
+      rgb(0 0 0 / 0.2) 72%,
+      transparent 82%
+    );
+    -webkit-mask-image: radial-gradient(
+      circle at 50% 50%,
+      #000 0%,
+      #000 42%,
+      rgb(0 0 0 / 0.55) 58%,
+      rgb(0 0 0 / 0.2) 72%,
+      transparent 82%
+    );
+    animation: mesh-orb-float 6s ease-in-out infinite;
+  }
+
+  .mesh-orb-inner {
+    filter: blur(36px) saturate(1.4);
+    transform: translateZ(0);
+  }
+
+  .mesh-orb-blob {
+    position: absolute;
+    border-radius: 9999px;
+    will-change: transform;
+  }
+
+  /* Deep teal core — like the red/orange heart in the reference */
+  .mesh-orb-blob-a {
+    top: 18%;
+    left: 8%;
+    width: 58%;
+    height: 58%;
+    background: radial-gradient(circle, #016a71 0%, #014d52 45%, transparent 85%);
+    animation: mesh-orb-a 7s ease-in-out infinite;
+  }
+
+  /* Rich teal mid-tone */
+  .mesh-orb-blob-b {
+    top: 28%;
+    left: 32%;
+    width: 52%;
+    height: 52%;
+    background: radial-gradient(circle, #0d9488 0%, #0f766e 40%, transparent 82%);
+    animation: mesh-orb-b 8s ease-in-out infinite;
+  }
+
+  /* Bright aqua streak */
+  .mesh-orb-blob-c {
+    top: 8%;
+    right: 6%;
+    width: 48%;
+    height: 48%;
+    background: radial-gradient(circle, #14b8a6 0%, #2dd4bf 38%, transparent 80%);
+    animation: mesh-orb-c 6s ease-in-out infinite;
+  }
+
+  /* Mint highlight — fades like yellow in reference */
+  .mesh-orb-blob-d {
+    bottom: 10%;
+    right: 12%;
+    width: 55%;
+    height: 55%;
+    background: radial-gradient(circle, #5eead4 0%, #99f6e4 35%, transparent 82%);
+    animation: mesh-orb-d 9s ease-in-out infinite;
+  }
+
+  /* Soft mint outer wash */
+  .mesh-orb-blob-e {
+    top: 24%;
+    left: 24%;
+    width: 58%;
+    height: 58%;
+    background: radial-gradient(
+      circle,
+      rgba(45, 212, 191, 0.75) 0%,
+      rgba(94, 234, 212, 0.35) 32%,
+      transparent 80%
+    );
+    animation: mesh-orb-e 10s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mesh-orb-colors,
+    .mesh-orb-blob {
+      animation: none;
+    }
+  }
+
+  .mesh-orb-glass {
+    pointer-events: none;
+    z-index: 10;
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.52) 0%,
+      rgba(255, 255, 255, 0.12) 38%,
+      rgba(255, 255, 255, 0.04) 58%,
+      rgba(255, 255, 255, 0.18) 100%
+    );
+    backdrop-filter: blur(8px) saturate(1.2);
+    -webkit-backdrop-filter: blur(8px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow:
+      inset 0 2px 4px rgba(255, 255, 255, 0.55),
+      inset 0 -10px 20px rgba(1, 106, 113, 0.12),
+      0 8px 32px rgba(1, 106, 113, 0.15);
+  }
+
+  .mesh-orb-glass::before {
+    content: "";
+    position: absolute;
+    top: 10%;
+    left: 16%;
+    width: 42%;
+    height: 28%;
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(255, 255, 255, 0.75) 0%,
+      rgba(255, 255, 255, 0.15) 45%,
+      transparent 72%
+    );
+    transform: rotate(-28deg);
+  }
+
+  .mesh-orb-glass::after {
+    content: "";
+    position: absolute;
+    bottom: 14%;
+    right: 18%;
+    width: 22%;
+    height: 14%;
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(255, 255, 255, 0.35) 0%,
+      transparent 70%
+    );
+  }
+}

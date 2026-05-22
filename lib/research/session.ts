@@ -9,6 +9,7 @@ export interface ResearchSession {
   id: string;
   query: string;
   objective: ResearchObjective;
+  customObjective?: string;
   depth: ResearchDepth;
   createdAt: number;
   entityName?: string;
@@ -48,12 +49,14 @@ export function listResearchSessions(limit = 20): ResearchSession[] {
 export function createResearchSession(input: {
   query: string;
   objective: ResearchObjective;
+  customObjective?: string;
   depth?: ResearchDepth;
 }): ResearchSession {
   return {
     id: crypto.randomUUID(),
     query: input.query,
     objective: input.objective,
+    customObjective: input.customObjective?.trim() || undefined,
     depth: input.depth ?? "standard",
     createdAt: Date.now(),
   };

@@ -19,7 +19,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useSearchHistory } from "@/lib/hooks/useSearchHistory";
-import { OBJECTIVE_LABELS } from "@/lib/research/types";
+import { getObjectiveLabel } from "@/lib/research/types";
 import { cn } from "@/lib/utils";
 
 const MENU_ITEMS = [
@@ -109,7 +109,10 @@ function SidebarNav({
                   {session.query}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {OBJECTIVE_LABELS[session.objective]}
+                  {getObjectiveLabel(
+                    session.objective,
+                    session.customObjective,
+                  )}
                 </p>
               </Link>
             ))}
@@ -141,8 +144,8 @@ export function SidebarMenu() {
           className="w-[min(300px,85vw)] border-border bg-canvas p-0 text-foreground shadow-xl"
         >
           <SheetHeader className="flex flex-row items-center justify-between border-b border-border px-5 py-4">
-            <SheetTitle className="text-lg font-normal lowercase tracking-tight text-foreground">
-              kriyagni
+            <SheetTitle className="text-lg font-normal tracking-tight text-foreground">
+              Kriyagni
             </SheetTitle>
             <button
               type="button"

@@ -41,6 +41,7 @@ export async function collectEvidence(
     entityName: input.entityName,
     domain: input.domain,
     objective: input.objective,
+    customObjective: input.customObjective,
     depth: input.depth,
     timeWindowMonths: input.timeWindowMonths,
     geographicFocus: input.geographicFocus,

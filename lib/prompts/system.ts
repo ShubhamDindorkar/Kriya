@@ -2,7 +2,7 @@ import { COMPLIANCE_PROMPT } from "@/lib/prompts/compliance";
 import { FOCUS_AREAS, SOURCE_TIER_GUIDE } from "@/lib/prompts/focus-areas";
 import { getOutputTemplate } from "@/lib/prompts/templates";
 import type { ResearchDepth, ResearchIntake } from "@/lib/research/types";
-import { OBJECTIVE_LABELS } from "@/lib/research/types";
+import { getObjectiveLabel } from "@/lib/research/types";
 
 const WORK_MODE = `
 ## DEFAULT WORK MODE
@@ -65,7 +65,7 @@ export function buildUserPrompt(
   evidenceBlock: string,
 ): string {
   const depth = intake.depth;
-  const objective = OBJECTIVE_LABELS[intake.objective];
+  const objective = getObjectiveLabel(intake.objective, intake.customObjective);
   const outputTemplate = getOutputTemplate(depth);
 
   return `

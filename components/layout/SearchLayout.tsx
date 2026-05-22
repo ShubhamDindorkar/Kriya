@@ -22,9 +22,9 @@ export function SearchLayout({
           <SidebarMenu />
           <Link
             href="/"
-            className="truncate text-sm font-normal lowercase tracking-tight text-foreground md:text-base"
+            className="truncate text-sm font-normal tracking-tight text-foreground md:text-base"
           >
-            kriyagni
+            Kriyagni
           </Link>
         </div>
         {headerActions ? (

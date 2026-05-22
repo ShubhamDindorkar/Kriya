@@ -10,7 +10,7 @@ import { buildIntakeFromQuery } from "@/lib/research/entity-parser";
 import type { ResearchRequestBody } from "@/lib/research/schemas";
 import type { ResearchStreamEvent } from "@/lib/research/stream";
 import type { ResearchIntake } from "@/lib/research/types";
-import { OBJECTIVE_LABELS } from "@/lib/research/types";
+import { getObjectiveLabel } from "@/lib/research/types";
 import { buildQueries } from "@/lib/search/query-builder";
 import type { BatchProgressEvent } from "@/lib/search/batch-runner";
 
@@ -65,7 +65,7 @@ function mapBatchEvent(event: BatchProgressEvent): ResearchStreamEvent | null {
 
 function generateFollowups(intake: ResearchIntake & { entityName: string }): string[] {
   const entity = intake.entityName;
-  const objective = OBJECTIVE_LABELS[intake.objective];
+  const customLabel = intake.customObjective?.trim();
 
   const byObjective: Record<string, string[]> = {
     vendor_assessment: [
@@ -93,6 +93,13 @@ function generateFollowups(intake: ResearchIntake & { entityName: string }): str
       `Has ${entity} disclosed any cybersecurity or data incidents?`,
       `What leadership or organizational changes has ${entity} experienced recently?`,
     ],
+    custom: customLabel
+      ? [
+          `What are the latest developments related to ${customLabel} at ${entity}?`,
+          `What public evidence supports or contradicts ${entity}'s position on ${customLabel}?`,
+          `How does ${entity} compare to peers on ${customLabel}?`,
+        ]
+      : [],
   };
 
   return (
@@ -120,6 +127,7 @@ export async function runResearchPipeline(
 
   const intake = buildIntakeFromQuery(body.query, {
     objective: body.objective,
+    customObjective: body.customObjective,
     depth: body.depth,
     timeWindowMonths: body.timeWindowMonths,
     geographicFocus: body.geographicFocus,
@@ -132,6 +140,7 @@ export async function runResearchPipeline(
     entityName: intake.entityName,
     domain: intake.domain,
     objective: intake.objective,
+    customObjective: intake.customObjective,
     depth: intake.depth,
     timeWindowMonths: intake.timeWindowMonths,
     geographicFocus: intake.geographicFocus,
@@ -142,7 +151,7 @@ export async function runResearchPipeline(
     type: "search_started",
     totalQueries: queries.length,
     entity: intake.entityName,
-    objective: OBJECTIVE_LABELS[intake.objective],
+    objective: getObjectiveLabel(intake.objective, intake.customObjective),
   });
 
   const evidence = await collectEvidence(intake, {

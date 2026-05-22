@@ -22,7 +22,7 @@ import {
   updateResearchSession,
 } from "@/lib/research/session";
 import type { ResearchObjective } from "@/lib/research/types";
-import { DEPTH_LABELS, OBJECTIVE_LABELS } from "@/lib/research/types";
+import { DEPTH_LABELS, getObjectiveLabel } from "@/lib/research/types";
 
 interface ResearchThreadProps {
   sessionId: string;
@@ -46,6 +46,7 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
     void startResearch({
       query: session.query,
       objective: session.objective,
+      customObjective: session.customObjective,
       depth: session.depth,
     });
   }, [session, sessionId, startResearch]);
@@ -94,17 +95,27 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
     );
   }
 
-  const { query: sessionQuery, objective: sessionObjective, depth } = session;
+  const { query: sessionQuery, objective: sessionObjective, customObjective, depth } =
+    session;
   const showSearchViz = isActive;
   const showFollowUpComposer =
     state.phase === "complete" ||
     state.phase === "stopped" ||
     state.phase === "error";
 
-  function handleFollowUp(query: string, objective: ResearchObjective) {
+  function handleFollowUp({
+    query,
+    objective,
+    customObjective: nextCustomObjective,
+  }: {
+    query: string;
+    objective: ResearchObjective;
+    customObjective?: string;
+  }) {
     const next = createResearchSession({
       query,
       objective,
+      customObjective: nextCustomObjective,
       depth,
     });
     saveResearchSession(next);
@@ -121,7 +132,7 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
         <header className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium text-teal">
-              {OBJECTIVE_LABELS[sessionObjective]}
+              {getObjectiveLabel(sessionObjective, customObjective)}
             </span>
             <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
               {DEPTH_LABELS[depth]}
@@ -192,7 +203,13 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
         {state.phase === "complete" && (
           <FollowUpChips
             questions={state.followups}
-            onSelect={(question) => handleFollowUp(question, sessionObjective)}
+            onSelect={(question) =>
+              handleFollowUp({
+                query: question,
+                objective: sessionObjective,
+                customObjective,
+              })
+            }
           />
         )}
 
@@ -205,6 +222,7 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
                   : "Start a new research query…"
               }
               defaultObjective={sessionObjective}
+              defaultCustomObjective={customObjective}
               onSubmit={handleFollowUp}
             />
           </div>

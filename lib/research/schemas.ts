@@ -9,8 +9,10 @@ export const researchRequestSchema = z.object({
       "competitive_intelligence",
       "market_intelligence",
       "risk_assessment",
+      "custom",
     ])
     .optional(),
+  customObjective: z.string().min(1).max(120).optional(),
   depth: z.enum(["quick", "standard", "comprehensive"]).optional(),
   timeWindowMonths: z.number().int().min(1).max(60).optional(),
   geographicFocus: z.string().optional(),
@@ -28,6 +30,13 @@ export const researchRequestSchema = z.object({
     .optional(),
   entityName: z.string().optional(),
   domain: z.string().optional(),
-});
+}).refine(
+  (data) =>
+    data.objective !== "custom" || Boolean(data.customObjective?.trim()),
+  {
+    message: "Custom objective description is required",
+    path: ["customObjective"],
+  },
+);
 
 export type ResearchRequestBody = z.infer<typeof researchRequestSchema>;
