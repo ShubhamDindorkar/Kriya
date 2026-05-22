@@ -6,6 +6,8 @@ import type { ResearchStreamEvent } from "@/lib/research/stream";
 
 export type ResearchPhase =
   | "idle"
+  | "analyzing"
+  | "conversing"
   | "searching"
   | "synthesizing"
   | "complete"
@@ -35,6 +37,7 @@ export interface ResearchStreamState {
   answer: string;
   entity: string | null;
   objective: string | null;
+  researchIntent: string | null;
   totalQueries: number;
   completedQueries: number;
   uniqueSources: number;
@@ -42,6 +45,7 @@ export interface ResearchStreamState {
   querySteps: QueryStep[];
   followups: string[];
   reportId: string | null;
+  isConversation: boolean;
   error: string | null;
   errorCode: string | null;
 }
@@ -51,6 +55,7 @@ const INITIAL_STATE: ResearchStreamState = {
   answer: "",
   entity: null,
   objective: null,
+  researchIntent: null,
   totalQueries: 0,
   completedQueries: 0,
   uniqueSources: 0,
@@ -58,6 +63,7 @@ const INITIAL_STATE: ResearchStreamState = {
   querySteps: [],
   followups: [],
   reportId: null,
+  isConversation: false,
   error: null,
   errorCode: null,
 };
@@ -133,7 +139,7 @@ export function useResearchStream() {
 
     setState({
       ...INITIAL_STATE,
-      phase: "searching",
+      phase: "analyzing",
     });
 
     try {
@@ -154,6 +160,17 @@ export function useResearchStream() {
       await consumeSse(response, (type, data) => {
         setState((prev) => {
           switch (type) {
+            case "analysis_started":
+              return { ...prev, phase: "analyzing" };
+            case "query_analyzed":
+              return {
+                ...prev,
+                entity: data.entity as string,
+                objective: data.objective as string,
+                researchIntent: data.researchIntent as string,
+              };
+            case "conversation_started":
+              return { ...prev, phase: "conversing", isConversation: true };
             case "search_started":
               return {
                 ...prev,
@@ -245,7 +262,10 @@ export function useResearchStream() {
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         setState((prev) =>
-          prev.phase === "searching" || prev.phase === "synthesizing"
+          prev.phase === "analyzing" ||
+          prev.phase === "conversing" ||
+          prev.phase === "searching" ||
+          prev.phase === "synthesizing"
             ? { ...prev, phase: "stopped" }
             : prev,
         );

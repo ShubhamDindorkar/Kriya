@@ -64,11 +64,33 @@ function SidebarNav({
       <Link
         href="/"
         onClick={onNavigate}
+        title="Start a new research session"
         className="mb-2 flex items-center gap-3 rounded-xl bg-teal px-3 py-2.5 text-sm font-medium text-teal-foreground transition-colors hover:bg-teal/90"
       >
         <Plus className="size-4 shrink-0" />
         New research
       </Link>
+
+      <div className="mb-3 rounded-xl bg-secondary/50 px-3 py-3">
+        <p className="text-xs font-medium text-foreground">Quick guide</p>
+        <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
+          <li>
+            <span className="font-medium text-foreground">Chat:</span> hello,
+            help, what can you do?
+          </li>
+          <li>
+            <span className="font-medium text-foreground">Research:</span>{" "}
+            Vendor assessment on Stripe
+          </li>
+          <li>
+            <span className="font-medium text-foreground">Stop</span> cancels
+            in-progress work;{" "}
+            <span className="font-medium text-foreground">New research</span>{" "}
+            starts fresh
+          </li>
+          <li>Recent sessions reopen past reports</li>
+        </ul>
+      </div>
 
       {MENU_ITEMS.map(({ href, label, icon: Icon }) => {
         const active = href === "/" && pathname === "/";
@@ -132,7 +154,7 @@ export function SidebarMenu() {
         type="button"
         onClick={() => setOpen(true)}
         className="inline-flex size-10 items-center justify-center rounded-xl transition-colors hover:bg-secondary"
-        aria-label="Open menu"
+        aria-label="Open menu — history, new research, and quick guide"
       >
         <MenuIcon open={false} />
       </button>

@@ -1,5 +1,15 @@
 export type ResearchStreamEvent =
   | {
+      type: "analysis_started";
+    }
+  | {
+      type: "query_analyzed";
+      entity: string;
+      objective: string;
+      researchIntent: string;
+    }
+  | { type: "conversation_started" }
+  | {
       type: "search_started";
       totalQueries: number;
       entity: string;

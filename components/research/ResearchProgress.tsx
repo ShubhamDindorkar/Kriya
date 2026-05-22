@@ -3,8 +3,17 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface ResearchProgressProps {
-  phase: "searching" | "synthesizing" | "complete" | "stopped" | "error" | "idle";
+  phase:
+    | "analyzing"
+    | "conversing"
+    | "searching"
+    | "synthesizing"
+    | "complete"
+    | "stopped"
+    | "error"
+    | "idle";
   entity?: string | null;
+  researchIntent?: string | null;
   totalQueries?: number;
   completedQueries?: number;
   uniqueSources?: number;
@@ -15,6 +24,7 @@ interface ResearchProgressProps {
 export function ResearchProgress({
   phase,
   entity,
+  researchIntent,
   totalQueries = 0,
   completedQueries = 0,
   uniqueSources = 0,
@@ -35,6 +45,15 @@ export function ResearchProgress({
       ? Math.min(100, Math.round((completedQueries / totalQueries) * 100))
       : 0;
 
+  const statusLabel =
+    phase === "analyzing"
+      ? "Understanding your request with AI…"
+      : phase === "conversing"
+        ? "Kriyagni is responding…"
+        : phase === "searching"
+          ? `Researching${entity ? ` ${entity}` : ""}…`
+          : "Writing report…";
+
   return (
     <div
       className={cn(
@@ -43,11 +62,7 @@ export function ResearchProgress({
       )}
     >
       <div className="flex items-center justify-between gap-4 text-sm">
-        <p className="font-medium text-foreground">
-          {phase === "searching"
-            ? `Researching${entity ? ` ${entity}` : ""}…`
-            : "Writing report…"}
-        </p>
+        <p className="font-medium text-foreground">{statusLabel}</p>
         <div className="flex shrink-0 items-center gap-2">
           {phase === "searching" && totalQueries > 0 && (
             <span className="text-muted-foreground">
@@ -69,6 +84,18 @@ export function ResearchProgress({
         </div>
       </div>
 
+      {phase === "conversing" && (
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
+          <div className="h-full w-2/3 animate-pulse rounded-full bg-teal/70" />
+        </div>
+      )}
+
+      {phase === "analyzing" && (
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
+          <div className="h-full w-1/3 animate-pulse rounded-full bg-teal/70" />
+        </div>
+      )}
+
       {phase === "searching" && totalQueries > 0 && (
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
           <div
@@ -82,6 +109,10 @@ export function ResearchProgress({
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
           <div className="h-full w-full animate-pulse rounded-full bg-teal/70" />
         </div>
+      )}
+
+      {phase === "analyzing" && researchIntent && (
+        <p className="mt-2 text-xs text-muted-foreground">{researchIntent}</p>
       )}
 
       {uniqueSources > 0 && (

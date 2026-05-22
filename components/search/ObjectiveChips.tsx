@@ -9,6 +9,21 @@ import { cn } from "@/lib/utils";
 
 const OBJECTIVES = Object.keys(OBJECTIVE_LABELS) as ResearchObjective[];
 
+const OBJECTIVE_DESCRIPTIONS: Record<ResearchObjective, string> = {
+  vendor_assessment:
+    "Evaluate a vendor's financial health, security posture, and reliability before you sign.",
+  ma_research:
+    "Due diligence for mergers, acquisitions, or investments — ownership, risks, synergies.",
+  competitive_intelligence:
+    "Understand competitors, market positioning, and strategic moves.",
+  market_intelligence:
+    "Industry size, trends, regulation, and emerging players in a sector.",
+  risk_assessment:
+    "Operational, financial, legal, and cybersecurity risk indicators.",
+  custom:
+    "Define your own lens — ESG screening, supply chain audit, partnership review, etc.",
+};
+
 interface ObjectiveChipsProps {
   selected: ResearchObjective;
   onSelect: (objective: ResearchObjective) => void;
@@ -26,6 +41,15 @@ export function ObjectiveChips({
 }: ObjectiveChipsProps) {
   return (
     <div className={cn("flex w-full flex-col items-center gap-3", className)}>
+      <div className="w-full text-center">
+        <p className="text-xs font-medium text-muted-foreground">
+          Research type
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground/80">
+          Select what kind of analysis to run on the company
+        </p>
+      </div>
+
       <div className="flex flex-wrap justify-center gap-2">
         {OBJECTIVES.map((objective) => {
           const isSelected = selected === objective;
@@ -34,6 +58,7 @@ export function ObjectiveChips({
               key={objective}
               type="button"
               onClick={() => onSelect(objective)}
+              title={OBJECTIVE_DESCRIPTIONS[objective]}
               className={cn(
                 "rounded-full border px-3 py-1.5 text-sm transition-colors",
                 isSelected
@@ -46,6 +71,10 @@ export function ObjectiveChips({
           );
         })}
       </div>
+
+      <p className="max-w-md text-center text-xs leading-relaxed text-muted-foreground">
+        {OBJECTIVE_DESCRIPTIONS[selected]}
+      </p>
 
       {selected === "custom" && (
         <Input

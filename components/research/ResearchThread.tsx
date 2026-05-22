@@ -9,6 +9,7 @@ import { StreamingAnswer } from "@/components/answer/StreamingAnswer";
 import { SearchLayout } from "@/components/layout/SearchLayout";
 import { ResearchError } from "@/components/research/ResearchError";
 import { ResearchProgress } from "@/components/research/ResearchProgress";
+import { ResearchSessionHelp } from "@/components/research/ResearchSessionHelp";
 import { ResearchStoppedBanner } from "@/components/research/ResearchStoppedBanner";
 import { ResearchToolbar } from "@/components/research/ResearchToolbar";
 import { ReportActions } from "@/components/research/ReportActions";
@@ -37,7 +38,10 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
   );
 
   const isActive =
-    state.phase === "searching" || state.phase === "synthesizing";
+    state.phase === "analyzing" ||
+    state.phase === "conversing" ||
+    state.phase === "searching" ||
+    state.phase === "synthesizing";
 
   useEffect(() => {
     if (!session || startedRef.current) return;
@@ -97,7 +101,8 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
 
   const { query: sessionQuery, objective: sessionObjective, customObjective, depth } =
     session;
-  const showSearchViz = isActive;
+  const showSearchViz =
+    state.phase === "searching" || state.phase === "synthesizing";
   const showFollowUpComposer =
     state.phase === "complete" ||
     state.phase === "stopped" ||
@@ -137,7 +142,12 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
             <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
               {DEPTH_LABELS[depth]}
             </span>
-            {state.entity && (
+            {state.isConversation && state.phase === "complete" && (
+              <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
+                Assistant
+              </span>
+            )}
+            {state.entity && !state.isConversation && (
               <span className="rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-foreground">
                 {state.entity}
               </span>
@@ -147,6 +157,11 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
             {sessionQuery}
           </h1>
         </header>
+
+        <ResearchSessionHelp
+          phase={state.phase}
+          isConversation={state.isConversation}
+        />
 
         {state.phase === "stopped" && <ResearchStoppedBanner />}
 
@@ -160,6 +175,7 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
         <ResearchProgress
           phase={state.phase}
           entity={state.entity}
+          researchIntent={state.researchIntent}
           totalQueries={state.totalQueries}
           completedQueries={state.completedQueries}
           uniqueSources={state.uniqueSources || state.sources.length}
@@ -183,16 +199,21 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
           highlightedSourceId={highlightedSourceId}
         />
 
-        {(state.answer || state.phase === "synthesizing") && (
+        {(state.answer ||
+          state.phase === "synthesizing" ||
+          state.phase === "conversing") && (
           <StreamingAnswer
             content={state.answer}
-            isStreaming={state.phase === "synthesizing"}
+            isStreaming={
+              state.phase === "synthesizing" || state.phase === "conversing"
+            }
             onCitationClick={handleCitationClick}
           />
         )}
 
         {(state.phase === "complete" || state.phase === "stopped") &&
-          state.answer && (
+          state.answer &&
+          !state.isConversation && (
             <ReportActions
               content={state.answer}
               query={sessionQuery}
@@ -200,29 +221,36 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
             />
           )}
 
-        {state.phase === "complete" && (
-          <FollowUpChips
-            questions={state.followups}
-            onSelect={(question) =>
-              handleFollowUp({
-                query: question,
-                objective: sessionObjective,
-                customObjective,
-              })
-            }
-          />
+        {state.phase === "complete" && state.followups.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              Suggested follow-ups — each starts a new research session
+            </p>
+            <FollowUpChips
+              questions={state.followups}
+              onSelect={(question) =>
+                handleFollowUp({
+                  query: question,
+                  objective: sessionObjective,
+                  customObjective,
+                })
+              }
+            />
+          </div>
         )}
 
         {showFollowUpComposer && (
           <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-canvas/95 px-4 py-4 backdrop-blur-sm md:static md:border-0 md:bg-transparent md:px-0 md:py-0 md:pt-6">
             <SearchComposer
               placeholder={
-                state.phase === "complete"
-                  ? "Ask a follow-up about this research…"
-                  : "Start a new research query…"
+                state.phase === "complete" && !state.isConversation
+                  ? "Research another company…"
+                  : "Ask about a company or say hello…"
               }
               defaultObjective={sessionObjective}
               defaultCustomObjective={customObjective}
+              showExamples={state.isConversation}
+              showHints={false}
               onSubmit={handleFollowUp}
             />
           </div>

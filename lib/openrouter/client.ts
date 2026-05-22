@@ -12,6 +12,48 @@ export function getOpenRouterModel(): string {
   return process.env.OPENROUTER_MODEL ?? "anthropic/claude-sonnet-4.5";
 }
 
+export async function completeOpenRouterChat(params: {
+  system: string;
+  user: string;
+  maxTokens?: number;
+}): Promise<string> {
+  const response = await fetch(OPENROUTER_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getOpenRouterApiKey()}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer":
+        process.env.OPENROUTER_SITE_URL ?? "http://localhost:3000",
+      "X-Title": "Kriyagni",
+    },
+    body: JSON.stringify({
+      model: getOpenRouterModel(),
+      max_tokens: params.maxTokens ?? 1024,
+      stream: false,
+      messages: [
+        { role: "system", content: params.system },
+        { role: "user", content: params.user },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`OpenRouter error (${response.status}): ${text}`);
+  }
+
+  const payload = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+
+  const content = payload.choices?.[0]?.message?.content?.trim();
+  if (!content) {
+    throw new Error("OpenRouter returned an empty completion");
+  }
+
+  return content;
+}
+
 export async function* streamOpenRouterChat(params: {
   system: string;
   user: string;

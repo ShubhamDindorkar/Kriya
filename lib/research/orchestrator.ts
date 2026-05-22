@@ -1,3 +1,7 @@
+import {
+  buildAssistantSystemPrompt,
+  buildAssistantUserPrompt,
+} from "@/lib/prompts/assistant-chat";
 import { streamOpenRouterChat } from "@/lib/openrouter/client";
 import {
   buildEvidenceBlock,
@@ -6,7 +10,11 @@ import {
 } from "@/lib/prompts/system";
 import { collectEvidence } from "@/lib/research/collect-evidence";
 import { checkCompliance } from "@/lib/research/compliance-gate";
-import { buildIntakeFromQuery } from "@/lib/research/entity-parser";
+import {
+  analyzeResearchQuery,
+  buildIntakeFromAnalysis,
+  CONVERSATION_STARTER_FOLLOWUPS,
+} from "@/lib/research/query-analyzer";
 import type { ResearchRequestBody } from "@/lib/research/schemas";
 import type { ResearchStreamEvent } from "@/lib/research/stream";
 import type { ResearchIntake } from "@/lib/research/types";
@@ -125,15 +133,40 @@ export async function runResearchPipeline(
     return;
   }
 
-  const intake = buildIntakeFromQuery(body.query, {
-    objective: body.objective,
-    customObjective: body.customObjective,
-    depth: body.depth,
-    timeWindowMonths: body.timeWindowMonths,
-    geographicFocus: body.geographicFocus,
-    priorityAreas: body.priorityAreas,
-    entityName: body.entityName,
-    domain: body.domain,
+  send({ type: "analysis_started" });
+
+  const analysis = await analyzeResearchQuery(body);
+
+  if (analysis.mode === "conversation") {
+    send({ type: "conversation_started" });
+
+    for await (const chunk of streamOpenRouterChat({
+      system: buildAssistantSystemPrompt(),
+      user: buildAssistantUserPrompt({
+        query: body.query,
+        objective: body.objective,
+      }),
+      maxTokens: 1024,
+    })) {
+      send({ type: "text_delta", content: chunk });
+    }
+
+    send({
+      type: "followups",
+      questions: CONVERSATION_STARTER_FOLLOWUPS,
+    });
+
+    send({ type: "done", reportId: crypto.randomUUID() });
+    return;
+  }
+
+  const intake = buildIntakeFromAnalysis(body, analysis);
+
+  send({
+    type: "query_analyzed",
+    entity: intake.entityName,
+    objective: getObjectiveLabel(intake.objective, intake.customObjective),
+    researchIntent: analysis.researchIntent ?? `Research on ${intake.entityName}`,
   });
 
   const queries = buildQueries({

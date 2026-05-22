@@ -10,7 +10,8 @@
     "verify:phase1": "tsx scripts/verify-phase1.ts",
     "verify:phase2": "tsx scripts/verify-phase2.ts",
     "verify:phase6": "tsx scripts/verify-phase6.ts",
-    "verify:entity-parser": "tsx scripts/verify-entity-parser.ts"
+    "verify:entity-parser": "tsx scripts/verify-entity-parser.ts",
+    "verify:query-analyzer": "tsx scripts/verify-query-analyzer.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
