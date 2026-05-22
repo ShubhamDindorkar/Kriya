@@ -25,6 +25,7 @@ interface SearchComposerProps {
   isLoading?: boolean;
   showExamples?: boolean;
   showHints?: boolean;
+  showObjectiveChips?: boolean;
 }
 
 export function SearchComposer({
@@ -36,6 +37,7 @@ export function SearchComposer({
   isLoading = false,
   showExamples = true,
   showHints = true,
+  showObjectiveChips = true,
 }: SearchComposerProps) {
   const [query, setQuery] = useState("");
   const [objective, setObjective] =
@@ -64,25 +66,27 @@ export function SearchComposer({
       className={cn("flex w-full max-w-2xl flex-col gap-5", className)}
     >
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2 px-1">
-          <label
-            htmlFor="research-query"
-            className="text-sm font-medium text-foreground"
-          >
-            Ask about a company
-          </label>
-          <span className="text-xs text-muted-foreground">
-            Press{" "}
-            <span className="inline-flex items-center rounded border border-border bg-secondary px-1 py-0.5 font-mono text-[10px]">
-              Enter
-            </span>{" "}
-            or{" "}
-            <span className="inline-flex size-4 items-center justify-center rounded bg-teal text-teal-foreground">
-              <ArrowRight className="size-2.5" />
-            </span>{" "}
-            to start
-          </span>
-        </div>
+        {showObjectiveChips && (
+          <div className="flex items-center justify-between gap-2 px-1">
+            <label
+              htmlFor="research-query"
+              className="text-sm font-medium text-foreground"
+            >
+              Ask about a company
+            </label>
+            <span className="text-xs text-muted-foreground">
+              Press{" "}
+              <span className="inline-flex items-center rounded border border-border bg-secondary px-1 py-0.5 font-mono text-[10px]">
+                Enter
+              </span>{" "}
+              or{" "}
+              <span className="inline-flex size-4 items-center justify-center rounded bg-teal text-teal-foreground">
+                <ArrowRight className="size-2.5" />
+              </span>{" "}
+              to start
+            </span>
+          </div>
+        )}
         <div className="relative flex items-center">
           <Input
             id="research-query"
@@ -90,7 +94,10 @@ export function SearchComposer({
             onChange={(event) => setQuery(event.target.value)}
             placeholder={placeholder}
             disabled={isLoading}
-            className="h-14 rounded-2xl border-border bg-white pr-14 text-base shadow-sm placeholder:text-muted-foreground/70 disabled:opacity-60"
+            className={cn(
+              "rounded-2xl border-border bg-white pr-14 text-base shadow-sm placeholder:text-muted-foreground/70 disabled:opacity-60",
+              showObjectiveChips ? "h-14" : "h-12",
+            )}
           />
           <Button
             type="submit"
@@ -123,12 +130,14 @@ export function SearchComposer({
         />
       )}
 
-      <ObjectiveChips
-        selected={objective}
-        onSelect={setObjective}
-        customObjective={customObjective}
-        onCustomObjectiveChange={setCustomObjective}
-      />
+      {showObjectiveChips && (
+        <ObjectiveChips
+          selected={objective}
+          onSelect={setObjective}
+          customObjective={customObjective}
+          onCustomObjectiveChange={setCustomObjective}
+        />
+      )}
 
       {needsCustomLabel && query.trim() && (
         <p className="text-center text-xs text-amber-700">

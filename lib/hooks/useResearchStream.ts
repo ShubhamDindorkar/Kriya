@@ -139,7 +139,7 @@ export function useResearchStream() {
 
     setState({
       ...INITIAL_STATE,
-      phase: "analyzing",
+      phase: "idle",
     });
 
     try {

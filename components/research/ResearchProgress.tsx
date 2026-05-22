@@ -34,6 +34,7 @@ export function ResearchProgress({
   if (
     phase === "idle" ||
     phase === "complete" ||
+    phase === "conversing" ||
     phase === "stopped" ||
     phase === "error"
   ) {
@@ -48,11 +49,9 @@ export function ResearchProgress({
   const statusLabel =
     phase === "analyzing"
       ? "Understanding your request with AI…"
-      : phase === "conversing"
-        ? "Kriyagni is responding…"
-        : phase === "searching"
-          ? `Researching${entity ? ` ${entity}` : ""}…`
-          : "Writing report…";
+      : phase === "searching"
+        ? `Researching${entity ? ` ${entity}` : ""}…`
+        : "Writing report…";
 
   return (
     <div
@@ -83,12 +82,6 @@ export function ResearchProgress({
           )}
         </div>
       </div>
-
-      {phase === "conversing" && (
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full w-2/3 animate-pulse rounded-full bg-teal/70" />
-        </div>
-      )}
 
       {phase === "analyzing" && (
         <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">

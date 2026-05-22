@@ -127,41 +127,65 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
     window.location.href = `/search/${next.id}`;
   }
 
+  const isChat = state.isConversation;
+  const showResearchChrome =
+    !isChat &&
+    (state.phase === "analyzing" ||
+      state.phase === "searching" ||
+      state.phase === "synthesizing" ||
+      (state.phase === "complete" && state.totalQueries > 0) ||
+      (state.phase === "stopped" && state.totalQueries > 0));
+
   return (
     <SearchLayout
       headerActions={
-        <ResearchToolbar isActive={isActive} onStop={handleStop} />
+        <ResearchToolbar isActive={isActive && !isChat} onStop={handleStop} />
       }
     >
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8 pb-28 md:px-6 md:pb-8">
-        <header className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium text-teal">
-              {getObjectiveLabel(sessionObjective, customObjective)}
-            </span>
-            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
-              {DEPTH_LABELS[depth]}
-            </span>
-            {state.isConversation && state.phase === "complete" && (
-              <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
-                Assistant
-              </span>
-            )}
-            {state.entity && !state.isConversation && (
-              <span className="rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-foreground">
-                {state.entity}
-              </span>
-            )}
-          </div>
+        {!showResearchChrome && !isChat && state.phase === "idle" && (
           <h1 className="text-xl font-medium leading-snug text-foreground md:text-2xl">
             {sessionQuery}
           </h1>
-        </header>
+        )}
 
-        <ResearchSessionHelp
-          phase={state.phase}
-          isConversation={state.isConversation}
-        />
+        {showResearchChrome && (
+          <header className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium text-teal">
+                {getObjectiveLabel(sessionObjective, customObjective)}
+              </span>
+              <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
+                {DEPTH_LABELS[depth]}
+              </span>
+              {state.entity && (
+                <span className="rounded-full border border-border bg-white px-3 py-1 text-xs font-medium text-foreground">
+                  {state.entity}
+                </span>
+              )}
+            </div>
+            <h1 className="text-xl font-medium leading-snug text-foreground md:text-2xl">
+              {sessionQuery}
+            </h1>
+          </header>
+        )}
+
+        {isChat && (
+          <div className="space-y-6">
+            <div className="flex justify-end">
+              <div className="max-w-[85%] rounded-2xl rounded-br-md bg-teal px-4 py-3 text-sm leading-relaxed text-teal-foreground">
+                {sessionQuery}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isChat && (
+          <ResearchSessionHelp
+            phase={state.phase}
+            isConversation={state.isConversation}
+          />
+        )}
 
         {state.phase === "stopped" && <ResearchStoppedBanner />}
 
@@ -179,7 +203,7 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
           totalQueries={state.totalQueries}
           completedQueries={state.completedQueries}
           uniqueSources={state.uniqueSources || state.sources.length}
-          onStop={handleStop}
+          onStop={isChat ? undefined : handleStop}
         />
 
         {showSearchViz && (
@@ -201,14 +225,21 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
 
         {(state.answer ||
           state.phase === "synthesizing" ||
-          state.phase === "conversing") && (
-          <StreamingAnswer
-            content={state.answer}
-            isStreaming={
-              state.phase === "synthesizing" || state.phase === "conversing"
-            }
-            onCitationClick={handleCitationClick}
-          />
+          state.phase === "conversing" ||
+          (isChat && state.phase === "idle")) && (
+          <div className={isChat ? "flex justify-start" : undefined}>
+            <StreamingAnswer
+              content={state.answer}
+              variant={isChat ? "chat" : "report"}
+              isStreaming={
+                isChat
+                  ? state.phase === "conversing"
+                  : state.phase === "synthesizing"
+              }
+              onCitationClick={handleCitationClick}
+              className={isChat ? "max-w-[90%]" : undefined}
+            />
+          </div>
         )}
 
         {(state.phase === "complete" || state.phase === "stopped") &&
@@ -224,7 +255,7 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
         {state.phase === "complete" && state.followups.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
-              Suggested follow-ups — each starts a new research session
+              {isChat ? "Try asking" : "Suggested follow-ups — each starts a new research session"}
             </p>
             <FollowUpChips
               questions={state.followups}
@@ -243,20 +274,23 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
           <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-canvas/95 px-4 py-4 backdrop-blur-sm md:static md:border-0 md:bg-transparent md:px-0 md:py-0 md:pt-6">
             <SearchComposer
               placeholder={
-                state.phase === "complete" && !state.isConversation
-                  ? "Research another company…"
-                  : "Ask about a company or say hello…"
+                isChat
+                  ? "Message Kriyagni…"
+                  : state.phase === "complete"
+                    ? "Research another company…"
+                    : "Ask about a company…"
               }
               defaultObjective={sessionObjective}
               defaultCustomObjective={customObjective}
-              showExamples={state.isConversation}
+              showExamples={isChat}
               showHints={false}
+              showObjectiveChips={!isChat}
               onSubmit={handleFollowUp}
             />
           </div>
         )}
 
-        {isActive && (
+        {isActive && !isChat && (
           <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-canvas/95 px-4 py-3 backdrop-blur-sm md:hidden">
             <ResearchToolbar
               isActive={isActive}

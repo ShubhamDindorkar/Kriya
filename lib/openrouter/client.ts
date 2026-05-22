@@ -16,6 +16,7 @@ export async function completeOpenRouterChat(params: {
   system: string;
   user: string;
   maxTokens?: number;
+  timeoutMs?: number;
 }): Promise<string> {
   const response = await fetch(OPENROUTER_API_URL, {
     method: "POST",
@@ -35,6 +36,7 @@ export async function completeOpenRouterChat(params: {
         { role: "user", content: params.user },
       ],
     }),
+    signal: AbortSignal.timeout(params.timeoutMs ?? 15_000),
   });
 
   if (!response.ok) {

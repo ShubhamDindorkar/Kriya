@@ -25,7 +25,7 @@ export function ResearchSessionHelp({
   switch (phase) {
     case "analyzing":
       message =
-        "Kriyagni is reading your message. If you named a company, 70+ public-source searches begin next. Greetings get a helpful reply instead.";
+        "Checking your request — Kriyagni only runs full research when a company is named.";
       break;
     case "conversing":
       message =
@@ -48,8 +48,10 @@ export function ResearchSessionHelp({
       message =
         "Research was cancelled. Partial results are below. Use New research for a fresh start, or type another company in the box below.";
       break;
-    default:
-      message = null;
+    case "error":
+      message =
+        "This request could not be processed. Try naming a company — e.g. Vendor assessment on Stripe.";
+      break;
   }
 
   if (!message) return null;

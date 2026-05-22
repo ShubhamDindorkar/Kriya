@@ -6,6 +6,11 @@ import { completeOpenRouterChat } from "@/lib/openrouter/client";
 import { buildIntakeFromQuery } from "@/lib/research/entity-parser";
 import type { ResearchRequestBody } from "@/lib/research/schemas";
 import type { ResearchObjective } from "@/lib/research/types";
+import {
+  isValidEntityName,
+  detectConversationSituation,
+  type ConversationSituation,
+} from "@/lib/research/query-validator";
 
 const VALID_OBJECTIVES = new Set<ResearchObjective>([
   "vendor_assessment",
@@ -43,6 +48,7 @@ const COMMON_NON_COMPANY_WORDS = new Set([
 
 export interface QueryAnalysisResult {
   mode: "research" | "conversation";
+  conversationSituation?: ConversationSituation;
   reason?: string;
   entityName?: string;
   domain?: string;
@@ -63,11 +69,11 @@ interface AiAnalysisPayload {
   confidence?: number;
 }
 
-function conversation(): QueryAnalysisResult {
-  return { mode: "conversation" };
+function conversation(situation: ConversationSituation = "general"): QueryAnalysisResult {
+  return { mode: "conversation", conversationSituation: situation };
 }
 
-function isConversationalQuery(query: string): boolean {
+export function isStarterConversationQuery(query: string): boolean {
   const trimmed = query.trim();
   if (!trimmed) return false;
 
@@ -152,16 +158,14 @@ function mergeWithRequest(
   if (
     !entityName ||
     entityName.length < 2 ||
-    COMMON_NON_COMPANY_WORDS.has(entityName.toLowerCase())
+    COMMON_NON_COMPANY_WORDS.has(entityName.toLowerCase()) ||
+    !isValidEntityName(entityName)
   ) {
-    return conversation();
+    return conversation("no_company");
   }
 
   if (objective === "custom" && !customObjective) {
-    return {
-      mode: "conversation",
-      reason: "Describe your custom research objective, then name a company.",
-    };
+    return conversation("no_company");
   }
 
   return {
@@ -189,13 +193,14 @@ async function analyzeWithAi(
       depth: body.depth,
     }),
     maxTokens: 512,
+    timeoutMs: 12_000,
   });
 
   const ai = parseJsonFromModel(raw);
   if (!ai) return null;
 
   if (!ai.allowed) {
-    return conversation();
+    return conversation("no_company");
   }
 
   return mergeWithRequest(body, ai);
@@ -215,8 +220,13 @@ function analyzeWithHeuristics(body: ResearchRequestBody): QueryAnalysisResult {
 export async function analyzeResearchQuery(
   body: ResearchRequestBody,
 ): Promise<QueryAnalysisResult> {
-  if (isConversationalQuery(body.query)) {
-    return conversation();
+  if (isStarterConversationQuery(body.query)) {
+    return conversation("welcome");
+  }
+
+  const chatSituation = detectConversationSituation(body.query);
+  if (chatSituation) {
+    return conversation(chatSituation);
   }
 
   try {

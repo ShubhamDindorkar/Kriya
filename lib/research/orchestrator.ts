@@ -1,6 +1,7 @@
 import {
   buildAssistantSystemPrompt,
   buildAssistantUserPrompt,
+  type AssistantSituation,
 } from "@/lib/prompts/assistant-chat";
 import { streamOpenRouterChat } from "@/lib/openrouter/client";
 import {
@@ -15,6 +16,7 @@ import {
   buildIntakeFromAnalysis,
   CONVERSATION_STARTER_FOLLOWUPS,
 } from "@/lib/research/query-analyzer";
+import { detectConversationSituation } from "@/lib/research/query-validator";
 import type { ResearchRequestBody } from "@/lib/research/schemas";
 import type { ResearchStreamEvent } from "@/lib/research/stream";
 import type { ResearchIntake } from "@/lib/research/types";
@@ -119,17 +121,46 @@ function generateFollowups(intake: ResearchIntake & { entityName: string }): str
   );
 }
 
+async function runConversation(
+  body: ResearchRequestBody,
+  send: (event: ResearchStreamEvent) => void,
+  situation: AssistantSituation = "general",
+): Promise<void> {
+  send({ type: "conversation_started" });
+
+  for await (const chunk of streamOpenRouterChat({
+    system: buildAssistantSystemPrompt(),
+    user: buildAssistantUserPrompt({
+      query: body.query,
+      objective: body.objective,
+      situation,
+    }),
+    maxTokens: 768,
+  })) {
+    send({ type: "text_delta", content: chunk });
+  }
+
+  send({
+    type: "followups",
+    questions: CONVERSATION_STARTER_FOLLOWUPS,
+  });
+
+  send({ type: "done", reportId: crypto.randomUUID() });
+}
+
 export async function runResearchPipeline(
   body: ResearchRequestBody,
   send: (event: ResearchStreamEvent) => void,
 ): Promise<void> {
   const compliance = checkCompliance(body.query);
   if (!compliance.allowed) {
-    send({
-      type: "error",
-      message: compliance.reason ?? "Request blocked",
-      code: "COMPLIANCE_BLOCKED",
-    });
+    await runConversation(body, send, "policy");
+    return;
+  }
+
+  const quickChat = detectConversationSituation(body.query);
+  if (quickChat) {
+    await runConversation(body, send, quickChat);
     return;
   }
 
@@ -138,25 +169,11 @@ export async function runResearchPipeline(
   const analysis = await analyzeResearchQuery(body);
 
   if (analysis.mode === "conversation") {
-    send({ type: "conversation_started" });
-
-    for await (const chunk of streamOpenRouterChat({
-      system: buildAssistantSystemPrompt(),
-      user: buildAssistantUserPrompt({
-        query: body.query,
-        objective: body.objective,
-      }),
-      maxTokens: 1024,
-    })) {
-      send({ type: "text_delta", content: chunk });
-    }
-
-    send({
-      type: "followups",
-      questions: CONVERSATION_STARTER_FOLLOWUPS,
-    });
-
-    send({ type: "done", reportId: crypto.randomUUID() });
+    await runConversation(
+      body,
+      send,
+      analysis.conversationSituation ?? "general",
+    );
     return;
   }
 

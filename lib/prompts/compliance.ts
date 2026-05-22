@@ -27,5 +27,16 @@ export const PROHIBITED_PATTERNS: RegExp[] = [
   /\b(private\s+email|personal\s+email)\b/i,
 ];
 
+/** Profanity — used with context checks in query-validator. */
+export const PROFANITY_PATTERN =
+  /\b(fuck(?:ing|ed|er|s)?|shit(?:ty|s)?|bitch(?:es)?|damn|ass(?:hole)?|cunt|bastard|dick(?:head)?|piss(?:ed|ing)?)\b/i;
+
+/** Harassment, slurs, and abusive language — always blocked. */
+export const HARASSMENT_PATTERNS: RegExp[] = [
+  /\b(nigg(?:a|er)|faggot|retard(?:ed)?|kike|chink|spic|wetback)\b/i,
+  /\bfuck(?:ing)?\s+(?:black|white|asian|gay|trans)\b/i,
+  /\b(?:black|white)\s+(?:ass|trash)\b/i,
+];
+
 export const COMPLIANCE_REJECTION_MESSAGE =
   "This request cannot be processed. Kriyagni only conducts lawful business intelligence using publicly available, business-relevant information. Personal surveillance, unauthorized access, or non-public PII collection is not permitted. Please rephrase your request to focus on public business information about the target organization.";

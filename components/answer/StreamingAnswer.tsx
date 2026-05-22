@@ -11,6 +11,7 @@ interface StreamingAnswerProps {
   isStreaming?: boolean;
   onCitationClick?: (index: number) => void;
   className?: string;
+  variant?: "report" | "chat";
 }
 
 const markdownStyles = [
@@ -30,6 +31,7 @@ export function StreamingAnswer({
   isStreaming = false,
   onCitationClick,
   className,
+  variant = "report",
 }: StreamingAnswerProps) {
   const components = useMemo(
     () => createCitationMarkdownComponents(onCitationClick),
@@ -41,17 +43,23 @@ export function StreamingAnswer({
   return (
     <article
       className={cn(
-        "rounded-2xl border border-border bg-white px-5 py-6 shadow-sm md:px-7 md:py-8",
-        markdownStyles,
+        variant === "chat"
+          ? "space-y-3 text-[15px] leading-7 text-foreground"
+          : "rounded-2xl border border-border bg-white px-5 py-6 shadow-sm md:px-7 md:py-8",
+        variant === "report" && markdownStyles,
         className,
       )}
     >
       {content ? (
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-          {content}
-        </ReactMarkdown>
+        <div className={variant === "chat" ? cn(markdownStyles) : undefined}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+            {content}
+          </ReactMarkdown>
+        </div>
       ) : (
-        <p className="text-muted-foreground">Preparing report…</p>
+        <p className="text-muted-foreground">
+          {variant === "chat" ? "Thinking…" : "Preparing report…"}
+        </p>
       )}
       {isStreaming && (
         <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-teal align-middle" />
