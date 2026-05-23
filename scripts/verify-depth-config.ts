@@ -23,8 +23,8 @@ function main() {
 
   assert(quick < standard, `quick (${quick}) should be fewer than standard (${standard})`);
   assert(
-    standard <= comprehensive,
-    `standard (${standard}) should be <= comprehensive (${comprehensive})`,
+    comprehensive > standard + 15,
+    `comprehensive (${comprehensive}) should be much larger than standard (${standard})`,
   );
   assert(quick <= 25, `quick should stay lean, got ${quick}`);
   assert(standard >= 60, `standard should remain thorough, got ${standard}`);

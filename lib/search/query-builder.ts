@@ -62,6 +62,70 @@ const OBJECTIVE_QUERY_EXTRAS: Record<ResearchObjective, string[]> = {
   ],
 };
 
+const COMPREHENSIVE_DEEP_DIVES: Record<FocusAreaKey, string[]> = {
+  companyProfile: [
+    "annual report 10-K business segments",
+    "executive leadership board directors",
+    "subsidiaries acquisitions corporate structure",
+  ],
+  financial: [
+    "quarterly earnings revenue growth",
+    "SEC filing 10-Q investor presentation",
+    "credit rating debt covenant liquidity",
+  ],
+  reputation: [
+    "analyst report Gartner Forrester rating",
+    "customer reviews enterprise case studies",
+    "media coverage press sentiment",
+  ],
+  legal: [
+    "litigation settlement court filing",
+    "regulatory enforcement SEC FTC action",
+    "patent trademark intellectual property",
+  ],
+  supplyChain: [
+    "strategic partnership key customers",
+    "supply chain vendor dependency risk",
+    "technology integration ecosystem partners",
+  ],
+  risk: [
+    "cybersecurity breach data incident",
+    "layoffs restructuring WARN filing",
+    "leadership departure governance changes",
+  ],
+};
+
+const COMPREHENSIVE_DOMAIN_QUERIES = (
+  entityName: string,
+  domain: string,
+): GeneratedQuery[] => [
+  {
+    query: `site:${domain} about company leadership products`,
+    focusArea: "companyProfile",
+    focusAreaId: "A",
+  },
+  {
+    query: `site:${domain} press release news announcement`,
+    focusArea: "companyProfile",
+    focusAreaId: "A",
+  },
+  {
+    query: `"${entityName}" site:${domain} investor relations financial`,
+    focusArea: "financial",
+    focusAreaId: "B",
+  },
+  {
+    query: `site:${domain} careers jobs hiring layoffs`,
+    focusArea: "risk",
+    focusAreaId: "F",
+  },
+  {
+    query: `site:${domain} security trust compliance certification`,
+    focusArea: "legal",
+    focusAreaId: "D",
+  },
+];
+
 const PRIORITY_TOPIC_BOOST: Record<PriorityArea, string[]> = {
   financial: [
     "revenue growth profitability financial performance",
@@ -193,23 +257,26 @@ export function buildQueries(input: QueryBuilderInput): GeneratedQuery[] {
   }
 
   if (domain && depthConfig.includeDomainQueries) {
-    const domainQueries = [
-      {
-        query: `site:${domain} about company leadership products`,
-        focusArea: "companyProfile" as FocusAreaKey,
-        focusAreaId: "A",
-      },
-      {
-        query: `site:${domain} press release news announcement`,
-        focusArea: "companyProfile" as FocusAreaKey,
-        focusAreaId: "A",
-      },
-      {
-        query: `"${entityName}" site:${domain} investor relations financial`,
-        focusArea: "financial" as FocusAreaKey,
-        focusAreaId: "B",
-      },
-    ];
+    const domainQueries =
+      depthConfig.domainQueryCount >= 5
+        ? COMPREHENSIVE_DOMAIN_QUERIES(entityName, domain)
+        : [
+            {
+              query: `site:${domain} about company leadership products`,
+              focusArea: "companyProfile" as FocusAreaKey,
+              focusAreaId: "A",
+            },
+            {
+              query: `site:${domain} press release news announcement`,
+              focusArea: "companyProfile" as FocusAreaKey,
+              focusAreaId: "A",
+            },
+            {
+              query: `"${entityName}" site:${domain} investor relations financial`,
+              focusArea: "financial" as FocusAreaKey,
+              focusAreaId: "B",
+            },
+          ];
     queries.push(...domainQueries.slice(0, depthConfig.domainQueryCount));
   }
 
@@ -235,6 +302,18 @@ export function buildQueries(input: QueryBuilderInput): GeneratedQuery[] {
           query: `"${entityName}" ${topic} ${timeRange}`.trim(),
           focusArea: "risk",
           focusAreaId: "PRI",
+        });
+      }
+    }
+  }
+
+  if (depthConfig.includeDeepDiveQueries) {
+    for (const key of focusKeys) {
+      for (const topic of COMPREHENSIVE_DEEP_DIVES[key]) {
+        queries.push({
+          query: `"${entityName}" ${topic} ${timeRange}`.trim(),
+          focusArea: key,
+          focusAreaId: FOCUS_AREAS[key].id,
         });
       }
     }

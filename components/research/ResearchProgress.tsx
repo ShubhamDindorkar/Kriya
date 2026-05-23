@@ -13,6 +13,7 @@ interface ResearchProgressProps {
     | "error"
     | "idle";
   entity?: string | null;
+  sourceCount?: number;
   onStop?: () => void;
   className?: string;
 }
@@ -20,6 +21,7 @@ interface ResearchProgressProps {
 export function ResearchProgress({
   phase,
   entity,
+  sourceCount = 0,
   onStop,
   className,
 }: ResearchProgressProps) {
@@ -51,7 +53,13 @@ export function ResearchProgress({
     >
       <div className="flex items-center justify-between gap-4 text-sm">
         <p className="font-medium text-foreground">{statusLabel}</p>
-        {onStop && (
+        <div className="flex shrink-0 items-center gap-2">
+          {sourceCount > 0 && (
+            <span className="text-sm tabular-nums text-muted-foreground">
+              {sourceCount}
+            </span>
+          )}
+          {onStop && (
           <Button
             type="button"
             variant="outline"
@@ -62,7 +70,8 @@ export function ResearchProgress({
             <Square className="size-3.5 fill-current" />
             Stop
           </Button>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">

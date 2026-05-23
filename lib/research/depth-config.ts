@@ -14,6 +14,8 @@ export interface ResearchDepthConfig {
   includeEntityMetaQueries: boolean;
   includePriorityBoosts: boolean;
   includeComprehensiveExtras: boolean;
+  /** Extra deep-dive query templates per focus area (comprehensive only). */
+  includeDeepDiveQueries: boolean;
   maxSourcesForLlm: number;
   maxResultsPerQuery: number;
   snippetMaxLength: number;
@@ -39,6 +41,7 @@ const DEPTH_CONFIG: Record<ResearchDepth, ResearchDepthConfig> = {
     includeEntityMetaQueries: false,
     includePriorityBoosts: false,
     includeComprehensiveExtras: false,
+    includeDeepDiveQueries: false,
     maxSourcesForLlm: 35,
     maxResultsPerQuery: 3,
     snippetMaxLength: 200,
@@ -56,6 +59,7 @@ const DEPTH_CONFIG: Record<ResearchDepth, ResearchDepthConfig> = {
     includeEntityMetaQueries: true,
     includePriorityBoosts: true,
     includeComprehensiveExtras: false,
+    includeDeepDiveQueries: false,
     maxSourcesForLlm: 100,
     maxResultsPerQuery: 5,
     snippetMaxLength: 300,
@@ -64,21 +68,22 @@ const DEPTH_CONFIG: Record<ResearchDepth, ResearchDepthConfig> = {
     synthesisMaxTokens: 8192,
   },
   comprehensive: {
-    timeWindowMonths: 18,
+    timeWindowMonths: 24,
     focusAreaKeys: "all",
     topicsPerFocusArea: "all",
     objectiveExtraCount: "all",
     includeDomainQueries: true,
-    domainQueryCount: 3,
+    domainQueryCount: 5,
     includeEntityMetaQueries: true,
     includePriorityBoosts: true,
     includeComprehensiveExtras: true,
-    maxSourcesForLlm: 120,
-    maxResultsPerQuery: 5,
-    snippetMaxLength: 300,
+    includeDeepDiveQueries: true,
+    maxSourcesForLlm: 160,
+    maxResultsPerQuery: 8,
+    snippetMaxLength: 350,
     batchSize: 10,
-    batchDelayMs: 200,
-    synthesisMaxTokens: 8192,
+    batchDelayMs: 150,
+    synthesisMaxTokens: 12288,
   },
 };
 

@@ -3,7 +3,7 @@ import {
   buildQueryAnalysisUserPrompt,
 } from "@/lib/prompts/query-analysis";
 import { completeOpenRouterChat } from "@/lib/openrouter/client";
-import { buildIntakeFromQuery } from "@/lib/research/entity-parser";
+import { buildIntakeFromQuery, resolveResearchDepth } from "@/lib/research/entity-parser";
 import type { ResearchRequestBody } from "@/lib/research/schemas";
 import type { ResearchObjective } from "@/lib/research/types";
 import {
@@ -246,7 +246,7 @@ export function buildIntakeFromAnalysis(
   return buildIntakeFromQuery(body.query, {
     objective: analysis.objective ?? body.objective,
     customObjective: analysis.customObjective ?? body.customObjective,
-    depth: body.depth,
+    depth: resolveResearchDepth(body.query, body.depth ?? "standard"),
     timeWindowMonths: body.timeWindowMonths,
     geographicFocus: body.geographicFocus,
     priorityAreas: body.priorityAreas,

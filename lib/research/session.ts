@@ -1,3 +1,4 @@
+import { resolveResearchDepth } from "@/lib/research/entity-parser";
 import type {
   ResearchDepth,
   ResearchObjective,
@@ -52,12 +53,14 @@ export function createResearchSession(input: {
   customObjective?: string;
   depth?: ResearchDepth;
 }): ResearchSession {
+  const depth = input.depth ?? resolveResearchDepth(input.query);
+
   return {
     id: crypto.randomUUID(),
     query: input.query,
     objective: input.objective ?? "vendor_assessment",
     customObjective: input.customObjective?.trim() || undefined,
-    depth: input.depth ?? "standard",
+    depth,
     createdAt: Date.now(),
   };
 }

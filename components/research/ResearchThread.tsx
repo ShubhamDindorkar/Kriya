@@ -197,6 +197,7 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
           <ResearchProgress
             phase={state.phase}
             entity={state.entity}
+            sourceCount={state.uniqueSources || state.sources.length}
             onStop={handleStop}
           />
         )}
@@ -249,8 +250,6 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
               }
               defaultObjective={sessionObjective}
               defaultCustomObjective={customObjective}
-              showExamples={false}
-              showHints={false}
               showObjectiveChips={!isChat}
               onSubmit={handleFollowUp}
             />

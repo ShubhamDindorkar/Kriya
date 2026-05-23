@@ -223,11 +223,20 @@ export function parseQueryMetadata(query: string): ParsedQueryMetadata {
   };
 }
 
+export function resolveResearchDepth(
+  query: string,
+  fallback: ResearchDepth = "standard",
+): ResearchDepth {
+  const fromQuery = parseQueryMetadata(query).depth;
+  return fromQuery ?? fallback;
+}
+
 export function buildIntakeFromQuery(
   query: string,
   partial: Partial<ResearchIntake> = {},
 ): ResearchIntake & { entityName: string } {
   const metadata = parseQueryMetadata(query);
+  const depth = metadata.depth ?? partial.depth ?? "standard";
 
   return {
     query,
@@ -235,11 +244,9 @@ export function buildIntakeFromQuery(
     domain: partial.domain ?? metadata.domain,
     objective: partial.objective ?? metadata.objective ?? "vendor_assessment",
     customObjective: partial.customObjective,
-    depth: partial.depth ?? metadata.depth ?? "standard",
+    depth,
     timeWindowMonths:
-      partial.timeWindowMonths ??
-      getResearchDepthConfig(partial.depth ?? metadata.depth ?? "standard")
-        .timeWindowMonths,
+      partial.timeWindowMonths ?? getResearchDepthConfig(depth).timeWindowMonths,
     geographicFocus: partial.geographicFocus,
     priorityAreas: partial.priorityAreas ?? [],
   };
