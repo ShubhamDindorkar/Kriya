@@ -60,6 +60,7 @@ export async function* streamOpenRouterChat(params: {
   system: string;
   user: string;
   maxTokens?: number;
+  signal?: AbortSignal;
 }): AsyncGenerator<string> {
   const response = await fetch(OPENROUTER_API_URL, {
     method: "POST",
@@ -79,6 +80,7 @@ export async function* streamOpenRouterChat(params: {
         { role: "user", content: params.user },
       ],
     }),
+    signal: params.signal,
   });
 
   if (!response.ok) {
@@ -95,6 +97,11 @@ export async function* streamOpenRouterChat(params: {
   let buffer = "";
 
   while (true) {
+    if (params.signal?.aborted) {
+      await reader.cancel();
+      return;
+    }
+
     const { done, value } = await reader.read();
     if (done) break;
 

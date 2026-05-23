@@ -24,6 +24,8 @@ export {
   getTierLabel,
   getTierWeight,
 } from "@/lib/search/tier-classifier";
+export { classifySource } from "@/lib/search/source-classifier";
+export type { ClassifySourceInput } from "@/lib/search/source-classifier";
 export {
   enrichSearchResult,
   getTavilyProvider,

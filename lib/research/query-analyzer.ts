@@ -5,7 +5,7 @@ import {
 import { completeOpenRouterChat } from "@/lib/openrouter/client";
 import { buildIntakeFromQuery, resolveResearchDepth } from "@/lib/research/entity-parser";
 import type { ResearchRequestBody } from "@/lib/research/schemas";
-import type { ResearchObjective } from "@/lib/research/types";
+import type { ResearchObjective, PriorityArea } from "@/lib/research/types";
 import {
   isValidEntityName,
   detectConversationSituation,
@@ -55,6 +55,8 @@ export interface QueryAnalysisResult {
   objective?: ResearchObjective;
   customObjective?: string;
   researchIntent?: string;
+  geographicFocus?: string;
+  priorityAreas?: PriorityArea[];
   confidence?: number;
 }
 
@@ -65,9 +67,20 @@ interface AiAnalysisPayload {
   objective?: string | null;
   customObjective?: string | null;
   researchIntent?: string | null;
+  geographicFocus?: string | null;
+  priorityAreas?: string[] | null;
   rejectionReason?: string | null;
   confidence?: number;
 }
+
+const VALID_PRIORITY_AREAS = new Set<PriorityArea>([
+  "financial",
+  "reputational",
+  "legal",
+  "market_position",
+  "supply_chain",
+  "risk_indicators",
+]);
 
 function conversation(situation: ConversationSituation = "general"): QueryAnalysisResult {
   return { mode: "conversation", conversationSituation: situation };
@@ -121,6 +134,17 @@ function normalizeObjective(
   return fallback;
 }
 
+function normalizePriorityAreas(
+  values: string[] | null | undefined,
+  fallback: PriorityArea[] = [],
+): PriorityArea[] {
+  if (!values?.length) return fallback;
+  const normalized = values.filter((value): value is PriorityArea =>
+    VALID_PRIORITY_AREAS.has(value as PriorityArea),
+  );
+  return normalized.length > 0 ? normalized : fallback;
+}
+
 function mergeWithRequest(
   body: ResearchRequestBody,
   ai: AiAnalysisPayload,
@@ -155,6 +179,16 @@ function mergeWithRequest(
     ai.customObjective?.trim() ||
     parsed.customObjective;
 
+  const geographicFocus =
+    body.geographicFocus?.trim() ||
+    ai.geographicFocus?.trim() ||
+    parsed.geographicFocus;
+
+  const priorityAreas = normalizePriorityAreas(
+    ai.priorityAreas ?? undefined,
+    body.priorityAreas?.length ? body.priorityAreas : parsed.priorityAreas,
+  );
+
   if (
     !entityName ||
     entityName.length < 2 ||
@@ -174,6 +208,8 @@ function mergeWithRequest(
     domain,
     objective,
     customObjective,
+    geographicFocus,
+    priorityAreas,
     researchIntent:
       ai.researchIntent?.trim() ||
       `Business intelligence research on ${entityName}`,
@@ -191,6 +227,8 @@ async function analyzeWithAi(
       objective: body.objective,
       customObjective: body.customObjective,
       depth: body.depth,
+      geographicFocus: body.geographicFocus,
+      priorityAreas: body.priorityAreas,
     }),
     maxTokens: 512,
     timeoutMs: 12_000,
@@ -248,8 +286,11 @@ export function buildIntakeFromAnalysis(
     customObjective: analysis.customObjective ?? body.customObjective,
     depth: resolveResearchDepth(body.query, body.depth ?? "standard"),
     timeWindowMonths: body.timeWindowMonths,
-    geographicFocus: body.geographicFocus,
-    priorityAreas: body.priorityAreas,
+    geographicFocus: analysis.geographicFocus ?? body.geographicFocus,
+    priorityAreas:
+      analysis.priorityAreas?.length
+        ? analysis.priorityAreas
+        : body.priorityAreas,
     entityName: analysis.entityName,
     domain: analysis.domain,
   });

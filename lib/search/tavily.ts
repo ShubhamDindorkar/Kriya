@@ -1,7 +1,7 @@
 import {
-  classifyDomain,
   getDomainFromUrl,
 } from "@/lib/search/tier-classifier";
+import { classifySource } from "@/lib/search/source-classifier";
 import type { SearchProvider, SearchResult } from "@/lib/search/types";
 
 interface TavilyResult {
@@ -64,13 +64,20 @@ export function enrichSearchResult(
   raw: Omit<SearchResult, "id" | "tier" | "domain">,
   id: number,
   queryIndex?: number,
+  entityDomain?: string,
 ): SearchResult {
   const domain = getDomainFromUrl(raw.url);
   return {
     ...raw,
     id,
     domain,
-    tier: classifyDomain(raw.url),
+    tier: classifySource({
+      url: raw.url,
+      title: raw.title,
+      snippet: raw.snippet,
+      domain,
+      entityDomain,
+    }),
     queryIndex,
   };
 }

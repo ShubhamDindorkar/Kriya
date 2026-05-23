@@ -1,9 +1,11 @@
 import { getTierWeight } from "@/lib/search/tier-classifier";
+import { classifySource } from "@/lib/search/source-classifier";
 import type { SearchResult } from "@/lib/search/types";
 
 export interface AggregateOptions {
   maxSources?: number;
   snippetMaxLength?: number;
+  entityDomain?: string;
 }
 
 function normalizeUrl(url: string): string {
@@ -58,13 +60,30 @@ export function truncateSnippet(text: string, maxLength: number): string {
   return `${text.slice(0, maxLength - 3).trim()}...`;
 }
 
+function applySourceTiers(
+  results: SearchResult[],
+  entityDomain?: string,
+): SearchResult[] {
+  return results.map((source) => ({
+    ...source,
+    tier: classifySource({
+      url: source.url,
+      title: source.title,
+      snippet: source.snippet,
+      domain: source.domain,
+      entityDomain,
+    }),
+  }));
+}
+
 export function aggregateSearchResults(
   results: SearchResult[],
   options: AggregateOptions = {},
 ): SearchResult[] {
-  const { maxSources = 120, snippetMaxLength = 300 } = options;
+  const { maxSources = 120, snippetMaxLength = 300, entityDomain } = options;
 
-  const deduped = dedupeSearchResults(results);
+  const classified = applySourceTiers(results, entityDomain);
+  const deduped = dedupeSearchResults(classified);
   const ranked = rankSearchResults(deduped);
 
   return ranked.slice(0, maxSources).map((source, index) => ({

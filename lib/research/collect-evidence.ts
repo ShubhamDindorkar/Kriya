@@ -25,6 +25,7 @@ export interface CollectEvidenceResult {
 }
 
 export interface CollectEvidenceOptions {
+  signal?: AbortSignal;
   onProgress?: (event: BatchProgressEvent) => void;
 }
 
@@ -56,6 +57,8 @@ export async function collectEvidence(
     maxResultsPerQuery: depthConfig.maxResultsPerQuery,
     batchSize: depthConfig.batchSize,
     batchDelayMs: depthConfig.batchDelayMs,
+    entityDomain: input.domain,
+    signal: options.signal,
     onProgress: options.onProgress,
   });
 

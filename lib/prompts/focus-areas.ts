@@ -116,21 +116,5 @@ export const FOCUS_AREAS = {
 
 export type FocusAreaKey = keyof typeof FOCUS_AREAS;
 
-export const SOURCE_TIER_GUIDE = `
-## SOURCE RELIABILITY FRAMEWORK
-
-Tier 1 (Weight 1.0): Government records, regulatory filings (SEC EDGAR), court documents, official company disclosures (10-K, 10-Q, 8-K, press releases), primary source documents.
-
-Tier 2 (Weight 0.7): Major news (Reuters, WSJ, Bloomberg, FT), established analyst firms (Gartner, Forrester, S&P), verified professional profiles.
-
-Tier 3 (Weight 0.4): Industry publications, trade journals, specialized business blogs, conference presentations, whitepapers, LinkedIn company data.
-
-Tier 4 (Weight 0.1): Single-source claims, anonymous reports, unverified social media. Mark as "Unverified—requires additional validation".
-
-## EVIDENCE STANDARDS
-
-Critical Claims: 1× Tier 1 OR 2× Tier 2
-High Confidence: 2× Tier 2 OR 1× Tier 2 + 2× Tier 3
-Medium Confidence: 3× Tier 3
-Low Confidence: Mark as unverified
-`.trim();
+/** @deprecated Import from @/lib/prompts/framework instead */
+export { EVIDENCE_STANDARDS, SOURCE_TIER_FRAMEWORK as SOURCE_TIER_GUIDE } from "@/lib/prompts/framework";

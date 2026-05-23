@@ -65,7 +65,7 @@ export function ResearchProgress({
             variant="outline"
             size="sm"
             onClick={onStop}
-            className="hidden gap-1.5 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive md:inline-flex"
+            className="inline-flex gap-1.5 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive md:inline-flex"
           >
             <Square className="size-3.5 fill-current" />
             Stop

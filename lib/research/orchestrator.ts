@@ -17,7 +17,11 @@ import {
 import { detectConversationSituation } from "@/lib/research/query-validator";
 import type { ResearchRequestBody } from "@/lib/research/schemas";
 import { getResearchDepthConfig } from "@/lib/research/depth-config";
-import type { ResearchStreamEvent } from "@/lib/research/stream";
+import {
+  type ResearchStreamEvent,
+  type ResearchStreamSender,
+  throwIfAborted,
+} from "@/lib/research/stream";
 import { getObjectiveLabel } from "@/lib/research/types";
 import { buildQueries } from "@/lib/search/query-builder";
 import type { BatchProgressEvent } from "@/lib/search/batch-runner";
@@ -73,7 +77,8 @@ function mapBatchEvent(event: BatchProgressEvent): ResearchStreamEvent | null {
 
 async function runConversation(
   body: ResearchRequestBody,
-  send: (event: ResearchStreamEvent) => void,
+  send: ResearchStreamSender,
+  signal?: AbortSignal,
 ): Promise<void> {
   send({ type: "conversation_started" });
 
@@ -84,7 +89,9 @@ async function runConversation(
       objective: body.objective,
     }),
     maxTokens: 768,
+    signal,
   })) {
+    throwIfAborted(signal);
     send({ type: "text_delta", content: chunk });
   }
 
@@ -93,26 +100,31 @@ async function runConversation(
 
 export async function runResearchPipeline(
   body: ResearchRequestBody,
-  send: (event: ResearchStreamEvent) => void,
+  send: ResearchStreamSender,
+  signal?: AbortSignal,
 ): Promise<void> {
+  throwIfAborted(signal);
+
   const compliance = checkCompliance(body.query);
   if (!compliance.allowed) {
-    await runConversation(body, send);
+    await runConversation(body, send, signal);
     return;
   }
 
   const quickChat = detectConversationSituation(body.query);
   if (quickChat) {
-    await runConversation(body, send);
+    await runConversation(body, send, signal);
     return;
   }
 
   send({ type: "analysis_started" });
+  throwIfAborted(signal);
 
   const analysis = await analyzeResearchQuery(body);
+  throwIfAborted(signal);
 
   if (analysis.mode === "conversation") {
-    await runConversation(body, send);
+    await runConversation(body, send, signal);
     return;
   }
 
@@ -145,17 +157,25 @@ export async function runResearchPipeline(
   });
 
   const evidence = await collectEvidence(intake, {
+    signal,
     onProgress: (event) => {
       const mapped = mapBatchEvent(event);
       if (mapped) send(mapped);
     },
   });
+  throwIfAborted(signal);
 
   send({ type: "synthesis_started" });
 
   const evidenceBlock = buildEvidenceBlock(evidence.sources);
   const systemPrompt = buildSystemPrompt();
-  const userPrompt = buildUserPrompt(intake, evidenceBlock);
+  const userPrompt = buildUserPrompt(intake, evidenceBlock, {
+    queriesExecuted: evidence.queriesExecuted,
+    totalRawResults: evidence.totalRawResults,
+    uniqueSources: evidence.sources.length,
+    tierSummary: evidence.tierSummary,
+    searchDurationMs: evidence.durationMs,
+  });
 
   const reportId = crypto.randomUUID();
 
@@ -163,7 +183,9 @@ export async function runResearchPipeline(
     system: systemPrompt,
     user: userPrompt,
     maxTokens: depthConfig.synthesisMaxTokens,
+    signal,
   })) {
+    throwIfAborted(signal);
     send({ type: "text_delta", content: chunk });
   }
 

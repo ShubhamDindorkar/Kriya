@@ -24,6 +24,8 @@ When allowed, extract:
 - objective: one of vendor_assessment | ma_research | competitive_intelligence | market_intelligence | risk_assessment | custom
 - customObjective: only when objective is custom
 - researchIntent: one sentence describing what research will be conducted
+- geographicFocus: if mentioned (e.g. "India", "US", "Europe"), else null
+- priorityAreas: array of financial | reputational | legal | market_position | supply_chain | risk_indicators if mentioned, else []
 
 Respect the user's selected objective from the request when provided, unless the query clearly indicates a different objective.
 
@@ -35,6 +37,8 @@ Respond with JSON only — no markdown, no prose:
   "objective": string | null,
   "customObjective": string | null,
   "researchIntent": string | null,
+  "geographicFocus": string | null,
+  "priorityAreas": string[],
   "rejectionReason": string | null,
   "confidence": number
 }
@@ -46,11 +50,15 @@ export function buildQueryAnalysisUserPrompt(input: {
   objective?: string;
   customObjective?: string;
   depth?: string;
+  geographicFocus?: string;
+  priorityAreas?: string[];
 }): string {
   return `
 User query: ${input.query}
 Selected objective chip: ${input.objective ?? "not specified"}
 Custom objective label: ${input.customObjective ?? "none"}
 Research depth: ${input.depth ?? "standard"}
+Geographic focus: ${input.geographicFocus ?? "not specified"}
+Priority areas: ${input.priorityAreas?.join(", ") || "not specified"}
 `.trim();
 }

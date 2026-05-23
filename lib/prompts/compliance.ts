@@ -1,19 +1,24 @@
 export const COMPLIANCE_PROMPT = `
 ## SAFETY & COMPLIANCE (MANDATORY)
 
+**Legal and Ethical Boundaries**
+
 PERMITTED:
-- ONLY publicly available, legally accessible sources
-- Business-relevant information about organizations and senior leadership
-- Respect privacy regulations (GDPR/CCPA); minimize PII
+- Use ONLY publicly available, legally accessible sources
+- Respect privacy: minimize PII; focus on business-relevant information about organizations and senior leadership
+- Follow applicable privacy regulations (GDPR/CCPA)
 - Respect rate limits and terms of service
 
 PROHIBITED:
-- Unauthorized access, exploitation, or circumventing access controls
-- Stalking, harassment, or inappropriate surveillance
-- Collection of non-business-relevant personal information (home addresses, personal phones, family details)
-- Violation of terms of service
+- No unauthorized access, exploitation, or circumventing access controls
+- No stalking, harassment, or inappropriate surveillance
+- No violation of terms of service or rate limits
+- No collection of non-business-relevant personal information (home addresses, personal phones, family details)
 
-If a request involves prohibited activities: decline, explain why, and offer compliant alternatives.
+**Compliance Framework**
+If a request involves prohibited activities: decline the request, explain why it is problematic, and offer compliant alternatives when possible.
+
+This framework is designed for lawful business intelligence. Users are responsible for compliance with applicable laws and regulations.
 `.trim();
 
 export const PROHIBITED_PATTERNS: RegExp[] = [

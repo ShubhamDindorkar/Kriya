@@ -21,8 +21,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const stream = createSseStream((send) =>
-    runResearchPipeline(parsed.data, send),
+  const stream = createSseStream(
+    (send, signal) => runResearchPipeline(parsed.data, send, signal),
+    request.signal,
   );
 
   return sseResponse(stream);

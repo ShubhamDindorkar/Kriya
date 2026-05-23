@@ -1,6 +1,6 @@
 import { checkCompliance } from "../lib/research/compliance-gate";
 import { getQueryCount } from "../lib/search/query-builder";
-import { classifyDomain } from "../lib/search/tier-classifier";
+import { classifySource } from "../lib/search/source-classifier";
 
 function assert(condition: boolean, message: string): void {
   if (!condition) {
@@ -33,21 +33,33 @@ assert(allowed.allowed, "Compliance gate should allow valid request");
 console.log("✓ Compliance gate allows valid requests");
 
 assert(
-  classifyDomain("https://www.sec.gov/Archives/edgar/data/") === 1,
+  classifySource({
+    url: "https://www.sec.gov/Archives/edgar/data/",
+    title: "SEC EDGAR filing",
+  }) === 1,
   "sec.gov should be Tier 1",
 );
 assert(
-  classifyDomain("https://www.reuters.com/business/") === 2,
+  classifySource({
+    url: "https://www.reuters.com/business/",
+    title: "Reuters business news",
+  }) === 2,
   "reuters.com should be Tier 2",
 );
 assert(
-  classifyDomain("https://techcrunch.com/") === 3,
+  classifySource({
+    url: "https://techcrunch.com/article",
+    title: "TechCrunch industry news",
+  }) === 3,
   "techcrunch.com should be Tier 3",
 );
 assert(
-  classifyDomain("https://www.reddit.com/r/") === 4,
+  classifySource({
+    url: "https://www.reddit.com/r/",
+    title: "Reddit discussion",
+  }) === 4,
   "reddit.com should be Tier 4",
 );
-console.log("✓ Tier classifier maps domains correctly");
+console.log("✓ Source classifier maps content correctly");
 
 console.log("\nPhase 1 verification passed.");

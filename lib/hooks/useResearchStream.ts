@@ -68,6 +68,14 @@ const INITIAL_STATE: ResearchStreamState = {
   errorCode: null,
 };
 
+const ACTIVE_PHASES = new Set<ResearchPhase>([
+  "idle",
+  "analyzing",
+  "conversing",
+  "searching",
+  "synthesizing",
+]);
+
 function upsertQueryStep(
   steps: QueryStep[],
   step: QueryStep,
@@ -91,6 +99,7 @@ function addUniqueSource(
 
 async function consumeSse(
   response: Response,
+  signal: AbortSignal,
   onEvent: (event: ResearchStreamEvent["type"], data: Record<string, unknown>) => void,
 ): Promise<void> {
   const reader = response.body?.getReader();
@@ -99,43 +108,56 @@ async function consumeSse(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const chunks = buffer.split("\n\n");
-    buffer = chunks.pop() ?? "";
-
-    for (const chunk of chunks) {
-      if (!chunk.trim()) continue;
-
-      let eventType = "message";
-      let dataLine = "";
-
-      for (const line of chunk.split("\n")) {
-        if (line.startsWith("event: ")) eventType = line.slice(7).trim();
-        if (line.startsWith("data: ")) dataLine = line.slice(6);
+  try {
+    while (true) {
+      if (signal.aborted) {
+        await reader.cancel();
+        throw new DOMException("The operation was aborted.", "AbortError");
       }
 
-      if (dataLine) {
-        onEvent(
-          eventType as ResearchStreamEvent["type"],
-          JSON.parse(dataLine) as Record<string, unknown>,
-        );
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split("\n\n");
+      buffer = chunks.pop() ?? "";
+
+      for (const chunk of chunks) {
+        if (!chunk.trim() || signal.aborted) continue;
+
+        let eventType = "message";
+        let dataLine = "";
+
+        for (const line of chunk.split("\n")) {
+          if (line.startsWith("event: ")) eventType = line.slice(7).trim();
+          if (line.startsWith("data: ")) dataLine = line.slice(6);
+        }
+
+        if (dataLine) {
+          onEvent(
+            eventType as ResearchStreamEvent["type"],
+            JSON.parse(dataLine) as Record<string, unknown>,
+          );
+        }
       }
     }
+  } finally {
+    reader.releaseLock();
   }
 }
 
 export function useResearchStream() {
   const [state, setState] = useState<ResearchStreamState>(INITIAL_STATE);
   const abortRef = useRef<AbortController | null>(null);
+  const isRunningRef = useRef(false);
+  const stoppedRef = useRef(false);
 
   const startResearch = useCallback(async (body: ResearchRequestBody) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    stoppedRef.current = false;
+    isRunningRef.current = true;
 
     setState({
       ...INITIAL_STATE,
@@ -150,6 +172,10 @@ export function useResearchStream() {
         signal: controller.signal,
       });
 
+      if (controller.signal.aborted || stoppedRef.current) {
+        throw new DOMException("The operation was aborted.", "AbortError");
+      }
+
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as {
           error?: string;
@@ -157,8 +183,12 @@ export function useResearchStream() {
         throw new Error(payload?.error ?? `Request failed (${response.status})`);
       }
 
-      await consumeSse(response, (type, data) => {
+      await consumeSse(response, controller.signal, (type, data) => {
+        if (stoppedRef.current) return;
+
         setState((prev) => {
+          if (stoppedRef.current) return prev;
+
           switch (type) {
             case "analysis_started":
               return { ...prev, phase: "analyzing" };
@@ -260,14 +290,13 @@ export function useResearchStream() {
         });
       });
     } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
+      if (
+        stoppedRef.current ||
+        (error instanceof DOMException && error.name === "AbortError") ||
+        (error instanceof Error && error.name === "AbortError")
+      ) {
         setState((prev) =>
-          prev.phase === "analyzing" ||
-          prev.phase === "conversing" ||
-          prev.phase === "searching" ||
-          prev.phase === "synthesizing"
-            ? { ...prev, phase: "stopped" }
-            : prev,
+          ACTIVE_PHASES.has(prev.phase) ? { ...prev, phase: "stopped" } : prev,
         );
         return;
       }
@@ -277,17 +306,31 @@ export function useResearchStream() {
         error:
           error instanceof Error ? error.message : "Failed to start research",
       }));
+    } finally {
+      isRunningRef.current = false;
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
     }
   }, []);
 
   const stopResearch = useCallback(() => {
+    if (!isRunningRef.current && !abortRef.current) return;
+
+    stoppedRef.current = true;
     abortRef.current?.abort();
     abortRef.current = null;
+
+    setState((prev) =>
+      ACTIVE_PHASES.has(prev.phase) ? { ...prev, phase: "stopped" } : prev,
+    );
   }, []);
 
   const reset = useCallback(() => {
+    stoppedRef.current = true;
     abortRef.current?.abort();
     abortRef.current = null;
+    isRunningRef.current = false;
     setState(INITIAL_STATE);
   }, []);
 

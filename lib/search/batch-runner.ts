@@ -1,3 +1,4 @@
+import { throwIfAborted } from "@/lib/research/stream";
 import { aggregateSearchResults } from "@/lib/search/aggregate";
 import type { GeneratedQuery } from "@/lib/search/query-builder";
 import { enrichSearchResult, getTavilyProvider } from "@/lib/search/tavily";
@@ -9,6 +10,8 @@ export interface BatchRunnerOptions {
   maxResultsPerQuery?: number;
   maxSources?: number;
   snippetMaxLength?: number;
+  entityDomain?: string;
+  signal?: AbortSignal;
   provider?: SearchProvider;
   onProgress?: (event: BatchProgressEvent) => void;
 }
@@ -71,6 +74,8 @@ export async function runSearchBatch(
     maxResultsPerQuery = 5,
     maxSources = 120,
     snippetMaxLength = 300,
+    entityDomain,
+    signal,
     provider = getTavilyProvider(),
     onProgress,
   } = options;
@@ -92,6 +97,8 @@ export async function runSearchBatch(
   });
 
   for (let i = 0; i < normalizedQueries.length; i += batchSize) {
+    throwIfAborted(signal);
+
     const batch = normalizedQueries.slice(i, i + batchSize);
 
     await Promise.all(
@@ -113,7 +120,12 @@ export async function runSearchBatch(
           });
 
           for (const result of results) {
-            const enriched = enrichSearchResult(result, nextId++, index);
+            const enriched = enrichSearchResult(
+              result,
+              nextId++,
+              index,
+              entityDomain,
+            );
             rawResults.push(enriched);
             onProgress?.({ type: "source_found", source: enriched });
           }
@@ -140,17 +152,20 @@ export async function runSearchBatch(
 
     if (i + batchSize < normalizedQueries.length) {
       await sleep(batchDelayMs);
+      throwIfAborted(signal);
     }
   }
 
   const allSources = aggregateSearchResults(rawResults, {
     maxSources: rawResults.length,
     snippetMaxLength,
+    entityDomain,
   });
 
   const sources = aggregateSearchResults(rawResults, {
     maxSources,
     snippetMaxLength,
+    entityDomain,
   });
 
   const durationMs = Date.now() - startTime;
