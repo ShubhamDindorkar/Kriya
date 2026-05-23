@@ -15,7 +15,7 @@ const MODES = [
   {
     icon: Search,
     title: "Full research",
-    badge: "70+ sources",
+    badge: "Web research",
     description:
       "Name a company and pick a research type. Kriyagni searches public data and writes a cited report.",
     examples: [

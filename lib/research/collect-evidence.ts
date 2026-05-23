@@ -1,4 +1,4 @@
-import { getDepthConfig } from "@/lib/prompts/system";
+import { getResearchDepthConfig } from "@/lib/research/depth-config";
 import { checkCompliance } from "@/lib/research/compliance-gate";
 import type { ResearchIntake } from "@/lib/research/types";
 import {
@@ -48,11 +48,14 @@ export async function collectEvidence(
     priorityAreas: input.priorityAreas,
   });
 
-  const depthConfig = getDepthConfig(input.depth);
+  const depthConfig = getResearchDepthConfig(input.depth);
 
   const batchResult = await runSearchBatch(queries, {
     maxSources: depthConfig.maxSourcesForLlm,
     snippetMaxLength: depthConfig.snippetMaxLength,
+    maxResultsPerQuery: depthConfig.maxResultsPerQuery,
+    batchSize: depthConfig.batchSize,
+    batchDelayMs: depthConfig.batchDelayMs,
     onProgress: options.onProgress,
   });
 

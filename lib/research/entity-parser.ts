@@ -1,3 +1,4 @@
+import { getResearchDepthConfig } from "@/lib/research/depth-config";
 import type {
   ResearchDepth,
   ResearchIntake,
@@ -234,8 +235,11 @@ export function buildIntakeFromQuery(
     domain: partial.domain ?? metadata.domain,
     objective: partial.objective ?? metadata.objective ?? "vendor_assessment",
     customObjective: partial.customObjective,
-    depth: partial.depth ?? metadata.depth ?? "comprehensive",
-    timeWindowMonths: partial.timeWindowMonths ?? 12,
+    depth: partial.depth ?? metadata.depth ?? "standard",
+    timeWindowMonths:
+      partial.timeWindowMonths ??
+      getResearchDepthConfig(partial.depth ?? metadata.depth ?? "standard")
+        .timeWindowMonths,
     geographicFocus: partial.geographicFocus,
     priorityAreas: partial.priorityAreas ?? [],
   };

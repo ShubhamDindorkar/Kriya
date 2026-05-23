@@ -255,8 +255,3 @@ export function buildIntakeFromAnalysis(
   });
 }
 
-export const CONVERSATION_STARTER_FOLLOWUPS = [
-  "Vendor assessment on Stripe",
-  "Due diligence on Reliance Industries",
-  "Competitive intelligence on Shopify",
-];

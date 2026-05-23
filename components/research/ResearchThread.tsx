@@ -3,22 +3,19 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { scrollToSource } from "@/components/answer/CitationBadge";
-import { FollowUpChips } from "@/components/answer/FollowUpChips";
 import { SourceCarousel } from "@/components/answer/SourceCarousel";
 import { StreamingAnswer } from "@/components/answer/StreamingAnswer";
 import { SearchLayout } from "@/components/layout/SearchLayout";
 import { ResearchError } from "@/components/research/ResearchError";
 import { ResearchProgress } from "@/components/research/ResearchProgress";
-import { ResearchSessionHelp } from "@/components/research/ResearchSessionHelp";
 import { ResearchStoppedBanner } from "@/components/research/ResearchStoppedBanner";
 import { ResearchToolbar } from "@/components/research/ResearchToolbar";
 import { ReportActions } from "@/components/research/ReportActions";
 import { SearchComposer } from "@/components/search/SearchComposer";
-import { SearchSteps } from "@/components/search/SearchSteps";
 import { useResearchStream } from "@/lib/hooks/useResearchStream";
+import { useResearchSession } from "@/lib/hooks/useResearchSession";
 import {
   createResearchSession,
-  getResearchSession,
   saveResearchSession,
   updateResearchSession,
 } from "@/lib/research/session";
@@ -30,7 +27,7 @@ interface ResearchThreadProps {
 }
 
 export function ResearchThread({ sessionId }: ResearchThreadProps) {
-  const session = getResearchSession(sessionId);
+  const { session, isReady } = useResearchSession(sessionId);
   const { state, startResearch, stopResearch } = useResearchStream();
   const startedRef = useRef(false);
   const [highlightedSourceId, setHighlightedSourceId] = useState<number | null>(
@@ -81,6 +78,16 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
     stopResearch();
   }, [stopResearch]);
 
+  if (!isReady) {
+    return (
+      <SearchLayout>
+        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-6 py-16">
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        </div>
+      </SearchLayout>
+    );
+  }
+
   if (!session) {
     return (
       <SearchLayout>
@@ -101,8 +108,7 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
 
   const { query: sessionQuery, objective: sessionObjective, customObjective, depth } =
     session;
-  const showSearchViz =
-    state.phase === "searching" || state.phase === "synthesizing";
+
   const showFollowUpComposer =
     state.phase === "complete" ||
     state.phase === "stopped" ||
@@ -171,20 +177,11 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
         )}
 
         {isChat && (
-          <div className="space-y-6">
-            <div className="flex justify-end">
-              <div className="max-w-[85%] rounded-2xl rounded-br-md bg-teal px-4 py-3 text-sm leading-relaxed text-teal-foreground">
-                {sessionQuery}
-              </div>
+          <div className="flex justify-end">
+            <div className="max-w-[85%] rounded-2xl rounded-br-md bg-teal px-4 py-3 text-sm leading-relaxed text-teal-foreground">
+              {sessionQuery}
             </div>
           </div>
-        )}
-
-        {!isChat && (
-          <ResearchSessionHelp
-            phase={state.phase}
-            isConversation={state.isConversation}
-          />
         )}
 
         {state.phase === "stopped" && <ResearchStoppedBanner />}
@@ -196,32 +193,20 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
           />
         )}
 
-        <ResearchProgress
-          phase={state.phase}
-          entity={state.entity}
-          researchIntent={state.researchIntent}
-          totalQueries={state.totalQueries}
-          completedQueries={state.completedQueries}
-          uniqueSources={state.uniqueSources || state.sources.length}
-          onStop={isChat ? undefined : handleStop}
-        />
-
-        {showSearchViz && (
-          <SearchSteps
-            steps={state.querySteps}
-            totalQueries={state.totalQueries}
-            isActive={state.phase === "searching"}
+        {!isChat && (
+          <ResearchProgress
+            phase={state.phase}
+            entity={state.entity}
+            onStop={handleStop}
           />
         )}
 
-        {state.phase === "synthesizing" && state.sources.length === 0 && (
-          <p className="text-sm text-muted-foreground">Analyzing evidence…</p>
+        {!isChat && (
+          <SourceCarousel
+            sources={state.sources}
+            highlightedSourceId={highlightedSourceId}
+          />
         )}
-
-        <SourceCarousel
-          sources={state.sources}
-          highlightedSourceId={highlightedSourceId}
-        />
 
         {(state.answer ||
           state.phase === "synthesizing" ||
@@ -252,24 +237,6 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
             />
           )}
 
-        {state.phase === "complete" && state.followups.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {isChat ? "Try asking" : "Suggested follow-ups — each starts a new research session"}
-            </p>
-            <FollowUpChips
-              questions={state.followups}
-              onSelect={(question) =>
-                handleFollowUp({
-                  query: question,
-                  objective: sessionObjective,
-                  customObjective,
-                })
-              }
-            />
-          </div>
-        )}
-
         {showFollowUpComposer && (
           <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-canvas/95 px-4 py-4 backdrop-blur-sm md:static md:border-0 md:bg-transparent md:px-0 md:py-0 md:pt-6">
             <SearchComposer
@@ -282,7 +249,7 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
               }
               defaultObjective={sessionObjective}
               defaultCustomObjective={customObjective}
-              showExamples={isChat}
+              showExamples={false}
               showHints={false}
               showObjectiveChips={!isChat}
               onSubmit={handleFollowUp}

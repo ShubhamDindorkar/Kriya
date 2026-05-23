@@ -48,14 +48,14 @@ export function listResearchSessions(limit = 20): ResearchSession[] {
 
 export function createResearchSession(input: {
   query: string;
-  objective: ResearchObjective;
+  objective?: ResearchObjective;
   customObjective?: string;
   depth?: ResearchDepth;
 }): ResearchSession {
   return {
     id: crypto.randomUUID(),
     query: input.query,
-    objective: input.objective,
+    objective: input.objective ?? "vendor_assessment",
     customObjective: input.customObjective?.trim() || undefined,
     depth: input.depth ?? "standard",
     createdAt: Date.now(),

@@ -31,7 +31,7 @@ const VALID_OBJECTIVES = new Set<ResearchObjective>([
 function HomeInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { sessions } = useSearchHistory();
+  const { sessions, isReady } = useSearchHistory();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const objectiveParam = searchParams.get("objective");
@@ -86,7 +86,7 @@ function HomeInner() {
 
           <ControlsGuide />
 
-          {sessions.length > 0 && (
+          {isReady && sessions.length > 0 && (
             <section className="w-full space-y-3">
               <h2 className="text-sm font-medium text-foreground">
                 Recent research

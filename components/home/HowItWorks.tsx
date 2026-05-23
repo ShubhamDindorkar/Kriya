@@ -19,7 +19,7 @@ const STEPS = [
     icon: Search,
     title: "Research",
     description:
-      "AI identifies the company, runs 70+ public-source searches, and collects verified evidence.",
+      "AI identifies the company, runs public-source searches, and collects verified evidence.",
   },
   {
     icon: FileText,

@@ -35,9 +35,6 @@ export function SourceCarousel({
     <section className={cn("space-y-3", className)}>
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-foreground">Sources</h2>
-        <span className="text-xs text-muted-foreground">
-          {uniqueSources.length} found
-        </span>
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

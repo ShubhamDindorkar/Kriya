@@ -1,7 +1,6 @@
 import {
   buildAssistantSystemPrompt,
   buildAssistantUserPrompt,
-  type AssistantSituation,
 } from "@/lib/prompts/assistant-chat";
 import { streamOpenRouterChat } from "@/lib/openrouter/client";
 import {
@@ -14,12 +13,11 @@ import { checkCompliance } from "@/lib/research/compliance-gate";
 import {
   analyzeResearchQuery,
   buildIntakeFromAnalysis,
-  CONVERSATION_STARTER_FOLLOWUPS,
 } from "@/lib/research/query-analyzer";
 import { detectConversationSituation } from "@/lib/research/query-validator";
 import type { ResearchRequestBody } from "@/lib/research/schemas";
+import { getResearchDepthConfig } from "@/lib/research/depth-config";
 import type { ResearchStreamEvent } from "@/lib/research/stream";
-import type { ResearchIntake } from "@/lib/research/types";
 import { getObjectiveLabel } from "@/lib/research/types";
 import { buildQueries } from "@/lib/search/query-builder";
 import type { BatchProgressEvent } from "@/lib/search/batch-runner";
@@ -73,58 +71,9 @@ function mapBatchEvent(event: BatchProgressEvent): ResearchStreamEvent | null {
   }
 }
 
-function generateFollowups(intake: ResearchIntake & { entityName: string }): string[] {
-  const entity = intake.entityName;
-  const customLabel = intake.customObjective?.trim();
-
-  const byObjective: Record<string, string[]> = {
-    vendor_assessment: [
-      `What are ${entity}'s financial stability indicators over the last 12 months?`,
-      `Does ${entity} have any active regulatory or legal issues?`,
-      `Who are ${entity}'s largest public enterprise customers or partners?`,
-    ],
-    ma_research: [
-      `What is ${entity}'s ownership structure and recent funding history?`,
-      `Are there material litigation or compliance risks for ${entity}?`,
-      `What synergies or integration risks exist with ${entity}?`,
-    ],
-    competitive_intelligence: [
-      `Who are ${entity}'s primary competitors and market share trends?`,
-      `What is ${entity}'s product differentiation vs competitors?`,
-      `What recent strategic moves has ${entity} made in the market?`,
-    ],
-    market_intelligence: [
-      `What is the market size and growth rate for ${entity}'s sector?`,
-      `What regulatory trends could impact ${entity}'s industry?`,
-      `Who are emerging players challenging ${entity}?`,
-    ],
-    risk_assessment: [
-      `What are ${entity}'s top operational and financial risk indicators?`,
-      `Has ${entity} disclosed any cybersecurity or data incidents?`,
-      `What leadership or organizational changes has ${entity} experienced recently?`,
-    ],
-    custom: customLabel
-      ? [
-          `What are the latest developments related to ${customLabel} at ${entity}?`,
-          `What public evidence supports or contradicts ${entity}'s position on ${customLabel}?`,
-          `How does ${entity} compare to peers on ${customLabel}?`,
-        ]
-      : [],
-  };
-
-  return (
-    byObjective[intake.objective] ?? [
-      `What are the key financial metrics for ${entity}?`,
-      `What legal or regulatory risks does ${entity} face?`,
-      `How does ${entity} compare to industry peers?`,
-    ]
-  );
-}
-
 async function runConversation(
   body: ResearchRequestBody,
   send: (event: ResearchStreamEvent) => void,
-  situation: AssistantSituation = "general",
 ): Promise<void> {
   send({ type: "conversation_started" });
 
@@ -133,17 +82,11 @@ async function runConversation(
     user: buildAssistantUserPrompt({
       query: body.query,
       objective: body.objective,
-      situation,
     }),
     maxTokens: 768,
   })) {
     send({ type: "text_delta", content: chunk });
   }
-
-  send({
-    type: "followups",
-    questions: CONVERSATION_STARTER_FOLLOWUPS,
-  });
 
   send({ type: "done", reportId: crypto.randomUUID() });
 }
@@ -154,13 +97,13 @@ export async function runResearchPipeline(
 ): Promise<void> {
   const compliance = checkCompliance(body.query);
   if (!compliance.allowed) {
-    await runConversation(body, send, "policy");
+    await runConversation(body, send);
     return;
   }
 
   const quickChat = detectConversationSituation(body.query);
   if (quickChat) {
-    await runConversation(body, send, quickChat);
+    await runConversation(body, send);
     return;
   }
 
@@ -169,15 +112,12 @@ export async function runResearchPipeline(
   const analysis = await analyzeResearchQuery(body);
 
   if (analysis.mode === "conversation") {
-    await runConversation(
-      body,
-      send,
-      analysis.conversationSituation ?? "general",
-    );
+    await runConversation(body, send);
     return;
   }
 
   const intake = buildIntakeFromAnalysis(body, analysis);
+  const depthConfig = getResearchDepthConfig(intake.depth);
 
   send({
     type: "query_analyzed",
@@ -222,15 +162,10 @@ export async function runResearchPipeline(
   for await (const chunk of streamOpenRouterChat({
     system: systemPrompt,
     user: userPrompt,
-    maxTokens: 8192,
+    maxTokens: depthConfig.synthesisMaxTokens,
   })) {
     send({ type: "text_delta", content: chunk });
   }
-
-  send({
-    type: "followups",
-    questions: generateFollowups(intake),
-  });
 
   send({ type: "done", reportId });
 }

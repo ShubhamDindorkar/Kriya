@@ -8,6 +8,7 @@ import {
 
 export function useSearchHistory() {
   const [sessions, setSessions] = useState<ResearchSession[]>([]);
+  const [isReady, setIsReady] = useState(false);
 
   const refresh = useCallback(() => {
     setSessions(listResearchSessions());
@@ -15,6 +16,7 @@ export function useSearchHistory() {
 
   useEffect(() => {
     refresh();
+    setIsReady(true);
   }, [refresh]);
 
   useEffect(() => {
@@ -23,5 +25,5 @@ export function useSearchHistory() {
     return () => window.removeEventListener("storage", onStorage);
   }, [refresh]);
 
-  return { sessions, refresh };
+  return { sessions, refresh, isReady };
 }

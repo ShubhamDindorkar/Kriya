@@ -1,4 +1,5 @@
 import { FOCUS_AREAS, type FocusAreaKey } from "@/lib/prompts/focus-areas";
+import { getResearchDepthConfig } from "@/lib/research/depth-config";
 import type {
   PriorityArea,
   ResearchDepth,
@@ -106,11 +107,14 @@ function buildFocusAreaQueries(
   focusAreaKey: FocusAreaKey,
   timeRange: string,
   geo?: string,
+  topicLimit: number | "all" = "all",
 ): GeneratedQuery[] {
   const area = FOCUS_AREAS[focusAreaKey];
   const geoSuffix = geo ? ` ${geo}` : "";
+  const topics =
+    topicLimit === "all" ? area.topics : area.topics.slice(0, topicLimit);
 
-  return area.topics.map((topic) => ({
+  return topics.map((topic) => ({
     query: `"${entityName}" ${topic} ${timeRange}${geoSuffix}`.trim(),
     focusArea: focusAreaKey,
     focusAreaId: area.id,
@@ -124,22 +128,39 @@ export function buildQueries(input: QueryBuilderInput): GeneratedQuery[] {
     objective,
     customObjective,
     depth,
-    timeWindowMonths = 12,
+    timeWindowMonths = getResearchDepthConfig(depth).timeWindowMonths,
     geographicFocus,
     priorityAreas = [],
   } = input;
 
+  const depthConfig = getResearchDepthConfig(depth);
   const timeRange = getYearRange(timeWindowMonths);
   const queries: GeneratedQuery[] = [];
 
-  const focusKeys = Object.keys(FOCUS_AREAS) as FocusAreaKey[];
+  const focusKeys =
+    depthConfig.focusAreaKeys === "all"
+      ? (Object.keys(FOCUS_AREAS) as FocusAreaKey[])
+      : depthConfig.focusAreaKeys;
+
   for (const key of focusKeys) {
     queries.push(
-      ...buildFocusAreaQueries(entityName, key, timeRange, geographicFocus),
+      ...buildFocusAreaQueries(
+        entityName,
+        key,
+        timeRange,
+        geographicFocus,
+        depthConfig.topicsPerFocusArea,
+      ),
     );
   }
 
-  for (const extra of OBJECTIVE_QUERY_EXTRAS[objective]) {
+  const objectiveExtras = OBJECTIVE_QUERY_EXTRAS[objective];
+  const extrasToUse =
+    depthConfig.objectiveExtraCount === "all"
+      ? objectiveExtras
+      : objectiveExtras.slice(0, depthConfig.objectiveExtraCount);
+
+  for (const extra of extrasToUse) {
     queries.push({
       query: `"${entityName}" ${extra} ${timeRange}`.trim(),
       focusArea: "risk",
@@ -160,58 +181,66 @@ export function buildQueries(input: QueryBuilderInput): GeneratedQuery[] {
         focusArea: "financial",
         focusAreaId: "CUS",
       },
-      {
+    );
+
+    if (depth !== "quick") {
+      queries.push({
         query: `"${entityName}" ${customTopic} news recent developments`.trim(),
         focusArea: "companyProfile",
         focusAreaId: "CUS",
-      },
-    );
-  }
-
-  if (domain) {
-    queries.push(
-      {
-        query: `site:${domain} about company leadership products`,
-        focusArea: "companyProfile",
-        focusAreaId: "A",
-      },
-      {
-        query: `site:${domain} press release news announcement`,
-        focusArea: "companyProfile",
-        focusAreaId: "A",
-      },
-      {
-        query: `"${entityName}" site:${domain} investor relations financial`,
-        focusArea: "financial",
-        focusAreaId: "B",
-      },
-    );
-  }
-
-  queries.push(
-    {
-      query: `"${entityName}" company official name legal entity DBA`,
-      focusArea: "companyProfile",
-      focusAreaId: "A",
-    },
-    {
-      query: `"${entityName}" subsidiary parent company ownership`,
-      focusArea: "companyProfile",
-      focusAreaId: "A",
-    },
-  );
-
-  for (const priority of priorityAreas) {
-    for (const topic of PRIORITY_TOPIC_BOOST[priority]) {
-      queries.push({
-        query: `"${entityName}" ${topic} ${timeRange}`.trim(),
-        focusArea: "risk",
-        focusAreaId: "PRI",
       });
     }
   }
 
-  if (depth === "comprehensive") {
+  if (domain && depthConfig.includeDomainQueries) {
+    const domainQueries = [
+      {
+        query: `site:${domain} about company leadership products`,
+        focusArea: "companyProfile" as FocusAreaKey,
+        focusAreaId: "A",
+      },
+      {
+        query: `site:${domain} press release news announcement`,
+        focusArea: "companyProfile" as FocusAreaKey,
+        focusAreaId: "A",
+      },
+      {
+        query: `"${entityName}" site:${domain} investor relations financial`,
+        focusArea: "financial" as FocusAreaKey,
+        focusAreaId: "B",
+      },
+    ];
+    queries.push(...domainQueries.slice(0, depthConfig.domainQueryCount));
+  }
+
+  if (depthConfig.includeEntityMetaQueries) {
+    queries.push(
+      {
+        query: `"${entityName}" company official name legal entity DBA`,
+        focusArea: "companyProfile",
+        focusAreaId: "A",
+      },
+      {
+        query: `"${entityName}" subsidiary parent company ownership`,
+        focusArea: "companyProfile",
+        focusAreaId: "A",
+      },
+    );
+  }
+
+  if (depthConfig.includePriorityBoosts) {
+    for (const priority of priorityAreas) {
+      for (const topic of PRIORITY_TOPIC_BOOST[priority]) {
+        queries.push({
+          query: `"${entityName}" ${topic} ${timeRange}`.trim(),
+          focusArea: "risk",
+          focusAreaId: "PRI",
+        });
+      }
+    }
+  }
+
+  if (depthConfig.includeComprehensiveExtras) {
     queries.push(
       {
         query: `"${entityName}" SEC Form 8-K material event filing`,

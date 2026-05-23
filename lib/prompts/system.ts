@@ -1,7 +1,7 @@
 import { COMPLIANCE_PROMPT } from "@/lib/prompts/compliance";
 import { FOCUS_AREAS, SOURCE_TIER_GUIDE } from "@/lib/prompts/focus-areas";
 import { getOutputTemplate } from "@/lib/prompts/templates";
-import type { ResearchDepth, ResearchIntake } from "@/lib/research/types";
+import type { ResearchIntake } from "@/lib/research/types";
 import { getObjectiveLabel } from "@/lib/research/types";
 
 const WORK_MODE = `
@@ -119,16 +119,4 @@ Snippet: ${source.snippet}`,
     .join("\n\n");
 }
 
-export function getDepthConfig(depth: ResearchDepth): {
-  maxSourcesForLlm: number;
-  snippetMaxLength: number;
-} {
-  switch (depth) {
-    case "quick":
-      return { maxSourcesForLlm: 60, snippetMaxLength: 250 };
-    case "standard":
-      return { maxSourcesForLlm: 100, snippetMaxLength: 300 };
-    case "comprehensive":
-      return { maxSourcesForLlm: 120, snippetMaxLength: 300 };
-  }
-}
+export { getDepthConfig } from "@/lib/research/depth-config";

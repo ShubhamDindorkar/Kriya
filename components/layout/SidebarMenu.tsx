@@ -3,15 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import {
-  Building2,
-  Clock,
-  GitCompare,
-  Home,
-  Plus,
-  Scale,
-  TrendingUp,
-} from "lucide-react";
+import { Clock, Home, Plus } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -22,13 +14,7 @@ import { useSearchHistory } from "@/lib/hooks/useSearchHistory";
 import { getObjectiveLabel } from "@/lib/research/types";
 import { cn } from "@/lib/utils";
 
-const MENU_ITEMS = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/?objective=vendor_assessment", label: "Vendor Assessment", icon: Building2 },
-  { href: "/?objective=ma_research", label: "M&A Research", icon: GitCompare },
-  { href: "/?objective=competitive_intelligence", label: "Competitive Intelligence", icon: TrendingUp },
-  { href: "/?objective=risk_assessment", label: "Risk Assessment", icon: Scale },
-] as const;
+const MENU_ITEMS = [{ href: "/", label: "Home", icon: Home }] as const;
 
 function MenuIcon({ open }: { open: boolean }) {
   return (
@@ -57,7 +43,7 @@ function SidebarNav({
   className?: string;
 }) {
   const pathname = usePathname();
-  const { sessions } = useSearchHistory();
+  const { sessions, isReady } = useSearchHistory();
 
   return (
     <nav className={cn("flex flex-col gap-1", className)}>
@@ -70,27 +56,6 @@ function SidebarNav({
         <Plus className="size-4 shrink-0" />
         New research
       </Link>
-
-      <div className="mb-3 rounded-xl bg-secondary/50 px-3 py-3">
-        <p className="text-xs font-medium text-foreground">Quick guide</p>
-        <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-muted-foreground">
-          <li>
-            <span className="font-medium text-foreground">Chat:</span> hello,
-            help, what can you do?
-          </li>
-          <li>
-            <span className="font-medium text-foreground">Research:</span>{" "}
-            Vendor assessment on Stripe
-          </li>
-          <li>
-            <span className="font-medium text-foreground">Stop</span> cancels
-            in-progress work;{" "}
-            <span className="font-medium text-foreground">New research</span>{" "}
-            starts fresh
-          </li>
-          <li>Recent sessions reopen past reports</li>
-        </ul>
-      </div>
 
       {MENU_ITEMS.map(({ href, label, icon: Icon }) => {
         const active = href === "/" && pathname === "/";
@@ -113,7 +78,7 @@ function SidebarNav({
         );
       })}
 
-      {sessions.length > 0 && (
+      {isReady && sessions.length > 0 && (
         <div className="mt-4 border-t border-border pt-4">
           <p className="mb-2 flex items-center gap-2 px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             <Clock className="size-3.5" />
