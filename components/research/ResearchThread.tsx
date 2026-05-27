@@ -198,6 +198,9 @@ export function ResearchThread({ sessionId }: ResearchThreadProps) {
             phase={state.phase}
             entity={state.entity}
             sourceCount={state.uniqueSources || state.sources.length}
+            totalQueries={state.totalQueries}
+            completedQueries={state.completedQueries}
+            querySteps={state.querySteps}
             onStop={handleStop}
           />
         )}

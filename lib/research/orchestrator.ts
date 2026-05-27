@@ -9,6 +9,7 @@ import {
   buildUserPrompt,
 } from "@/lib/prompts/system";
 import { collectEvidence } from "@/lib/research/collect-evidence";
+import { getReportDisclaimerDelta } from "@/lib/research/disclaimer";
 import { checkCompliance } from "@/lib/research/compliance-gate";
 import {
   analyzeResearchQuery,
@@ -178,6 +179,7 @@ export async function runResearchPipeline(
   });
 
   const reportId = crypto.randomUUID();
+  let reportContent = "";
 
   for await (const chunk of streamOpenRouterChat({
     system: systemPrompt,
@@ -186,7 +188,13 @@ export async function runResearchPipeline(
     signal,
   })) {
     throwIfAborted(signal);
+    reportContent += chunk;
     send({ type: "text_delta", content: chunk });
+  }
+
+  const disclaimerDelta = getReportDisclaimerDelta(reportContent);
+  if (disclaimerDelta) {
+    send({ type: "text_delta", content: disclaimerDelta });
   }
 
   send({ type: "done", reportId });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { appendReportDisclaimer } from "@/lib/research/disclaimer";
 import type { ResearchRequestBody } from "@/lib/research/schemas";
 import type { ResearchStreamEvent } from "@/lib/research/stream";
 
@@ -278,12 +279,17 @@ export function useResearchStream() {
                 error: data.message as string,
                 errorCode: (data.code as string) ?? null,
               };
-            case "done":
+            case "done": {
+              const answer = prev.isConversation
+                ? prev.answer
+                : appendReportDisclaimer(prev.answer);
               return {
                 ...prev,
                 phase: "complete",
+                answer,
                 reportId: data.reportId as string,
               };
+            }
             default:
               return prev;
           }
@@ -295,9 +301,16 @@ export function useResearchStream() {
         (error instanceof DOMException && error.name === "AbortError") ||
         (error instanceof Error && error.name === "AbortError")
       ) {
-        setState((prev) =>
-          ACTIVE_PHASES.has(prev.phase) ? { ...prev, phase: "stopped" } : prev,
-        );
+        setState((prev) => {
+          if (!ACTIVE_PHASES.has(prev.phase)) return prev;
+
+          const answer =
+            !prev.isConversation && prev.answer
+              ? appendReportDisclaimer(prev.answer)
+              : prev.answer;
+
+          return { ...prev, phase: "stopped", answer };
+        });
         return;
       }
       setState((prev) => ({
